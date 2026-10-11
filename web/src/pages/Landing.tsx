@@ -146,8 +146,8 @@ const STEPS = [
   },
   {
     title: "Show the reasons",
-    body: "Every decision lists the factors that pushed the risk up or down, the way lenders must explain a decline.",
-    status: "Next milestone",
+    body: "Every decision lists the factors that pushed the risk up or down, measured with SHAP. On a decline, they are the principal reasons a lender must give the applicant.",
+    note: "Contributions add up exactly to the score: nothing is hidden.",
   },
   {
     title: "Check fairness",

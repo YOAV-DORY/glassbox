@@ -2,6 +2,7 @@ import { formatPercent } from "../format";
 import type { ModelInfo } from "../types";
 import type { PredictionState } from "../usePrediction";
 import { useTweenedNumber } from "../useTweenedNumber";
+import { Reasons } from "./Reasons";
 import { RiskScale } from "./RiskScale";
 
 const MODEL_NAMES: Record<string, string> = { logreg: "Logistic regression", lgbm: "LightGBM" };
@@ -49,29 +50,21 @@ export function DecisionPanel(props: { prediction: PredictionState; info: ModelI
 
       <RiskScale probability={probability} threshold={threshold} average={info?.average_default_rate ?? null} />
 
-      <dl className="facts">
-        {probability !== null && info && (
-          <div>
-            <dt>Compared with average</dt>
-            <dd>{(probability / info.average_default_rate).toFixed(1)}× the typical risk</dd>
-          </div>
-        )}
-        {info && (
-          <div>
-            <dt>Lending policy</dt>
-            <dd>
-              Approve when expected profit is positive: {formatPercent(info.policy.lgd, 0)} lost on a default,{" "}
-              {formatPercent(info.policy.margin, 0)} earned on a repaid loan.
-            </dd>
-          </div>
-        )}
-      </dl>
+      {probability !== null && info && (
+        <p className="panel-compare">
+          <strong>{(probability / info.average_default_rate).toFixed(1)}×</strong> the average applicant's risk
+        </p>
+      )}
+
+      {result && !error && <Reasons up={result.reasons_up} down={result.reasons_down} decision={result.decision} />}
 
       {info && (
         <footer className="panel-foot">
           <span>{MODEL_NAMES[info.model_type] ?? info.model_type}</span>
           <span>Test ROC-AUC {(info.test_roc_auc ?? info.validation_roc_auc).toFixed(3)}</span>
-          <span>Trained {info.trained_at.slice(0, 10)}</span>
+          <span>
+            Policy: {formatPercent(info.policy.lgd, 0)} loss on default, {formatPercent(info.policy.margin, 0)} margin
+          </span>
         </footer>
       )}
     </aside>

@@ -51,11 +51,21 @@ export type ApplicantDraft = Omit<Applicant, "amt_credit" | "amt_annuity" | "amt
   amt_income_total: number | null;
 };
 
+/** One factor behind a prediction: its SHAP contribution, in log-odds. */
+export interface Reason {
+  feature: string;
+  label: string; // e.g. "Credit bureau score 2"
+  value: string; // e.g. "0.48" or "no score on file"
+  impact: number; // > 0 raises risk, < 0 lowers it
+}
+
 export interface PredictResponse {
   probability_of_default: number;
   decision: "approve" | "decline";
   threshold: number;
   model_version: string;
+  reasons_up: Reason[]; // strongest first; on a decline these are the principal reasons
+  reasons_down: Reason[];
 }
 
 export interface ModelInfo {
@@ -69,6 +79,7 @@ export interface ModelInfo {
   test_pr_auc: number | null;
   average_default_rate: number;
   policy: { lgd: number; margin: number; threshold: number };
+  global_importance: { feature: string; label: string; importance: number }[];
 }
 
 export interface RiskSurface {

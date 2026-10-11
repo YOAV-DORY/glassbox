@@ -492,7 +492,7 @@ input[type="range"]:disabled {
 
 .panel-wrap {
   position: sticky;
-  top: 104px; /* below the sticky top bar */
+  top: 92px; /* below the sticky top bar */
   isolation: isolate;
 }
 
@@ -522,7 +522,12 @@ input[type="range"]:disabled {
 
 .panel {
   position: relative;
-  padding: 30px 32px 26px;
+  /* Never taller than the window (minus the sticky offset): on short laptop screens the
+     panel scrolls inside itself instead of hiding its bottom off-screen. */
+  max-height: calc(100vh - 112px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: 24px 28px 20px;
   border-radius: 20px;
   background: var(--glass);
   backdrop-filter: blur(7px) saturate(1.4);
@@ -575,7 +580,7 @@ input[type="range"]:disabled {
 .figure {
   display: flex;
   align-items: baseline;
-  margin: 12px 0 18px;
+  margin: 8px 0 14px;
   font-family: var(--serif);
   font-variant-numeric: tabular-nums;
   line-height: 0.9;
@@ -587,18 +592,18 @@ input[type="range"]:disabled {
 }
 
 .figure-whole {
-  font-size: 128px;
+  font-size: 104px;
   letter-spacing: -0.04em;
 }
 
 .figure-decimals {
-  font-size: 62px;
+  font-size: 52px;
   letter-spacing: -0.02em;
 }
 
 .figure-unit {
   margin-left: 6px;
-  font-size: 46px;
+  font-size: 38px;
   font-style: italic;
   color: var(--ink-2);
 }
@@ -627,7 +632,7 @@ input[type="range"]:disabled {
 .stamp-word {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 36px;
+  font-size: 32px;
   line-height: 1;
 }
 
@@ -655,7 +660,7 @@ input[type="range"]:disabled {
 
 /* Risk ruler */
 .scale {
-  margin: 34px 0 4px;
+  margin: 26px 0 0;
 }
 
 .scale-ruler {
@@ -812,39 +817,118 @@ input[type="range"]:disabled {
   transform: rotate(45deg);
 }
 
-.facts {
-  margin: 24px 0 0;
+.panel-compare {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.panel-compare strong {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+/* SHAP reason codes */
+.reasons {
+  margin-top: 20px;
+  padding-top: 18px;
   border-top: 1px solid var(--rule-soft);
 }
 
-.facts div {
-  display: grid;
-  grid-template-columns: 112px 1fr;
-  gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--rule-soft);
-}
-
-.facts dt {
+.reasons-title {
+  margin: 0 0 12px;
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-3);
-  padding-top: 2px;
+  color: var(--ink-2);
 }
 
-.facts dd {
+.reason-group + .reason-group {
+  margin-top: 12px;
+}
+
+.reason-group-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reason-group--up .reason-group-title {
+  color: var(--decline);
+}
+
+.reason-group--down .reason-group-title {
+  color: var(--approve);
+}
+
+.reason-group ul {
+  display: grid;
+  gap: 8px;
   margin: 0;
-  font-size: 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.reason {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  row-gap: 4px;
+  font-size: 13px;
+  animation: rise 0.4s var(--ease) backwards;
+}
+
+.reason-label {
+  color: var(--ink);
+}
+
+.reason-value {
+  font-family: var(--mono);
+  font-size: 12px;
   color: var(--ink-2);
+  text-align: right;
+}
+
+.reason-bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--rule-soft);
+}
+
+.reason-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s var(--ease);
+}
+
+.reason-group--up .reason-bar i {
+  background: var(--decline);
+}
+
+.reason-group--down .reason-bar i {
+  background: var(--approve);
+}
+
+.reasons-note {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-3);
 }
 
 .panel-foot {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 16px;
-  margin-top: 18px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-soft);
   font-family: var(--mono);
   font-size: 10px;
   color: var(--ink-3);
@@ -864,7 +948,7 @@ input[type="range"]:disabled {
   }
 
   .figure-whole {
-    font-size: 108px;
+    font-size: 96px;
   }
 }
 
@@ -891,6 +975,10 @@ input[type="range"]:disabled {
     top: 0;
     order: -1;
     margin: 10px 10px 0;
+  }
+
+  .panel {
+    max-height: none;
   }
 
   .panel-wrap::before {
