@@ -35,6 +35,7 @@ from credit_risk.evaluate import basic_metrics, calibration_table, paired_bootst
 from credit_risk.explain import LABELS, Explainer, global_importance, plot_importance
 from credit_risk.fairness import audit
 from credit_risk.models import build_logreg_pipeline, fit_lgbm
+from credit_risk.reports import MetricsReport
 from credit_risk.whatif import plot_risk_map
 
 MODEL_NAMES = {"logreg": "Logistic regression", "lgbm": "LightGBM"}
@@ -168,6 +169,7 @@ def run(
             "test": calibration_table(y_test, test_predictions[best]),
         },
     }
+    MetricsReport.model_validate(report)  # fail here, not in whatever reads the file later
     reports_dir.mkdir(parents=True, exist_ok=True)
     (reports_dir / "metrics.json").write_text(json.dumps(report, indent=2))
 
