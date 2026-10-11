@@ -8,7 +8,11 @@ from pathlib import Path
 # src/credit_risk/config.py -> parents[2] is the repo root (works with `pip install -e .`).
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
-TRAIN_CSV = RAW_DATA_DIR / "application_train.csv"
+# Kaggle serves the file zipped; some browsers unzip it automatically. Accept both.
+TRAIN_FILE_CANDIDATES = [
+    RAW_DATA_DIR / "application_train.csv",
+    RAW_DATA_DIR / "application_train.csv.zip",
+]
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 

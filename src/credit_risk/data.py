@@ -19,7 +19,7 @@ from credit_risk.config import (
     RANDOM_SEED,
     TARGET,
     TEST_SIZE,
-    TRAIN_CSV,
+    TRAIN_FILE_CANDIDATES,
     VAL_SIZE,
 )
 
@@ -30,15 +30,19 @@ class Splits(NamedTuple):
     test: pd.DataFrame
 
 
-def load_raw(path: Path = TRAIN_CSV) -> pd.DataFrame:
-    """Read only the columns we use (~20 of 122) from the Kaggle CSV."""
-    if not path.exists():
-        raise FileNotFoundError(
-            f"{path} not found. Download application_train.csv from "
-            "https://www.kaggle.com/competitions/home-credit-default-risk/data "
-            "and put it in data/raw/ (see README)."
-        )
-    return pd.read_csv(path, usecols=list(ALL_RENAMES))
+def find_train_file() -> Path:
+    for path in TRAIN_FILE_CANDIDATES:
+        if path.exists():
+            return path
+    raise FileNotFoundError(
+        "application_train.csv (or .csv.zip) not found in data/raw/. Download it from "
+        "https://www.kaggle.com/competitions/home-credit-default-risk/data (see README)."
+    )
+
+
+def load_raw(path: Path | None = None) -> pd.DataFrame:
+    """Read only the columns we use (~20 of 122). pandas reads .zip files directly."""
+    return pd.read_csv(path or find_train_file(), usecols=list(ALL_RENAMES))
 
 
 def clean(raw: pd.DataFrame) -> pd.DataFrame:
@@ -89,7 +93,7 @@ def split(df: pd.DataFrame, seed: int = RANDOM_SEED) -> Splits:
     return Splits(train, val, test)
 
 
-def load_splits(path: Path = TRAIN_CSV, seed: int = RANDOM_SEED) -> Splits:
+def load_splits(path: Path | None = None, seed: int = RANDOM_SEED) -> Splits:
     return split(clean(load_raw(path)), seed=seed)
 
 
