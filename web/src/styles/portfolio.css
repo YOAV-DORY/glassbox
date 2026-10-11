@@ -1,0 +1,373 @@
+/* Portfolio simulator: policy controls on the left, outcomes on the right. */
+
+.portfolio {
+  padding: 0 var(--gutter) 80px;
+}
+
+.sim {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.sim-controls {
+  position: sticky;
+  top: 92px;
+}
+
+/* ---------- Policy controls ---------- */
+
+.policy-card,
+.card {
+  border: 1px solid var(--rule-soft);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.policy-card {
+  padding: 28px 28px 24px;
+}
+
+.policy-field {
+  margin-top: 26px;
+}
+
+.policy-field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.policy-value {
+  font-family: var(--serif);
+  font-size: 34px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.policy-field .field-hint {
+  margin-top: 6px;
+}
+
+.policy-formula {
+  display: grid;
+  gap: 4px;
+  margin-top: 28px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: var(--ink);
+  color: var(--paper);
+  transition: opacity 0.4s var(--ease);
+}
+
+.policy-formula.is-off {
+  opacity: 0.35;
+}
+
+.policy-formula-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.policy-formula-value {
+  font-family: var(--serif);
+  font-size: 60px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.policy-formula-math {
+  font-family: var(--mono);
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.policy-manual {
+  margin-top: 22px;
+  white-space: normal;
+}
+
+.policy-reset {
+  margin-top: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.policy-reset:hover {
+  color: var(--ink);
+}
+
+.sim-to-desk,
+.panel-policy {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.sim-to-desk {
+  display: inline-block;
+  margin: 18px 0 0 6px;
+  font-size: 15px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.sim-to-desk:hover,
+.panel-policy:hover {
+  color: var(--cobalt);
+  border-color: var(--cobalt);
+}
+
+/* ---------- Results ---------- */
+
+.sim-results {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.sim-results.is-busy .kpi-value,
+.sim-results.is-busy .profit-curve {
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 20px 18px;
+  border: 1px solid var(--rule-soft);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.kpi-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.kpi-value {
+  font-family: var(--serif);
+  font-size: clamp(30px, 2.8vw, 42px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi--gain .kpi-value {
+  color: var(--approve);
+}
+
+.kpi--loss .kpi-value {
+  color: var(--decline);
+}
+
+.kpi-note {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.card {
+  padding: 28px 30px;
+  overflow-x: auto; /* the table can scroll sideways on narrow phones */
+}
+
+.card-title {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.card-note {
+  max-width: 72ch;
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* Profit curve (SVG) */
+.profit-curve {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  cursor: crosshair;
+  font-family: var(--mono);
+  transition: opacity 0.2s;
+}
+
+.profit-curve .grid-line {
+  stroke: var(--rule-soft);
+}
+
+.profit-curve .axis-label {
+  font-size: 11px;
+  fill: var(--ink-3);
+}
+
+.profit-curve .ref-line {
+  stroke: var(--ink-3);
+  stroke-dasharray: 2 4;
+}
+
+.profit-curve .ref-label {
+  font-size: 11px;
+  fill: var(--ink-2);
+}
+
+.profit-curve .curve-area {
+  fill: var(--cobalt-soft);
+}
+
+.profit-curve .curve-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.profit-curve .best-line {
+  stroke: var(--decline);
+  stroke-dasharray: 4 4;
+}
+
+.profit-curve .best-label {
+  font-size: 11px;
+  fill: var(--decline);
+}
+
+.profit-curve .policy-marker {
+  transition: transform 0.6s var(--ease); /* glides when the cut-off changes */
+}
+
+.profit-curve .policy-marker line {
+  stroke: var(--cobalt);
+  stroke-width: 2;
+}
+
+.profit-curve .policy-marker circle {
+  fill: var(--cobalt);
+  stroke: var(--paper);
+  stroke-width: 2.5;
+  transition: cy 0.6s var(--ease);
+}
+
+.profit-curve .hover line {
+  stroke: var(--ink-3);
+  stroke-dasharray: 2 3;
+}
+
+.profit-curve .hover circle {
+  fill: var(--ink);
+}
+
+.profit-curve .hover text {
+  font-size: 12px;
+  fill: var(--ink);
+  paint-order: stroke; /* a paper-coloured outline keeps the label readable over the lines */
+  stroke: var(--paper);
+  stroke-width: 4px;
+}
+
+/* Comparison table */
+.compare {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.compare th {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.compare td {
+  padding: 14px 12px 14px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.compare tr.is-yours td {
+  font-weight: 600;
+}
+
+.compare tr.is-yours td:first-child {
+  color: var(--cobalt);
+}
+
+.assumptions ul {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+/* Expected profit in the decision panel */
+.panel-compare .is-gain {
+  color: var(--approve);
+}
+
+.panel-compare .is-loss {
+  color: var(--decline);
+}
+
+@media (max-width: 1150px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .portfolio {
+    padding-bottom: 60px;
+  }
+
+  .sim {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  .sim-controls {
+    position: relative;
+    top: 0;
+  }
+
+  .card {
+    padding: 22px 20px;
+  }
+}

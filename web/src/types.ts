@@ -59,11 +59,19 @@ export interface Reason {
   impact: number; // > 0 raises risk, < 0 lowers it
 }
 
+/** Lending economics, as shares of the loan amount. */
+export interface Policy {
+  lgd: number; // loss given default: share of the loan lost when a borrower defaults
+  margin: number; // profit on a repaid loan
+  threshold_override: number | null; // a hand-set cut-off instead of the formula
+}
+
 export interface PredictResponse {
   probability_of_default: number;
   decision: "approve" | "decline";
   threshold: number;
   model_version: string;
+  expected_profit: number; // of approving this loan, under the policy
   reasons_up: Reason[]; // strongest first; on a decline these are the principal reasons
   reasons_down: Reason[];
 }
@@ -89,4 +97,32 @@ export interface RiskSurface {
   y: number[];
   z: number[][]; // z[i][j] = probability of default at y[i], x[j]
   threshold: number;
+}
+
+/** What a cut-off would have done to the test applicants, using their real outcomes. */
+export interface PortfolioOutcome {
+  threshold: number;
+  approval_rate: number;
+  bad_rate: number; // share of approved loans that defaulted
+  approved: number;
+  expected_loss: number; // the model's forecast
+  realized_loss: number; // what actually happened
+  profit: number;
+}
+
+export interface CurvePoint {
+  threshold: number;
+  approval_rate: number;
+  bad_rate: number;
+  profit: number;
+}
+
+export interface PortfolioResponse {
+  applicants: number;
+  formula_threshold: number;
+  best_threshold: number; // most profitable cut-off in hindsight
+  policy: PortfolioOutcome;
+  approve_all: PortfolioOutcome;
+  cutoff_50: PortfolioOutcome;
+  curve: CurvePoint[];
 }

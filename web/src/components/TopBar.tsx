@@ -5,7 +5,7 @@ export function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-export function TopBar(props: { page: "landing" | "assess"; info: ModelInfo | null; offline: boolean }) {
+export function TopBar(props: { page: "landing" | "assess" | "portfolio"; info: ModelInfo | null; offline: boolean }) {
   const { page, info, offline } = props;
   return (
     <header className="topbar">
@@ -23,6 +23,9 @@ export function TopBar(props: { page: "landing" | "assess"; info: ModelInfo | nu
             <button type="button" className="topnav-link" onClick={() => scrollToSection("landscape")}>
               Risk landscape
             </button>
+            <Link to="/portfolio" className="topnav-link">
+              Portfolio
+            </Link>
             <Link to="/assess" className="topnav-cta">
               <span>
                 Assess<span className="cta-long"> an applicant</span>
@@ -34,6 +37,9 @@ export function TopBar(props: { page: "landing" | "assess"; info: ModelInfo | nu
           <>
             <Link to="/" className="topnav-link">
               <span aria-hidden="true">←</span> Overview
+            </Link>
+            <Link to={page === "assess" ? "/portfolio" : "/assess"} className="topnav-link">
+              {page === "assess" ? "Portfolio" : "Decision desk"}
             </Link>
             <span className={offline ? "status is-down" : "status"}>
               <i />

@@ -1,15 +1,16 @@
-import { formatPercent } from "../format";
-import type { ModelInfo } from "../types";
-import type { PredictionState } from "../usePrediction";
+import { formatAmount, formatPercent } from "../format";
+import { Link } from "../router";
+import type { ModelInfo, Policy, PredictResponse } from "../types";
+import type { LiveState } from "../useLiveRequest";
 import { useTweenedNumber } from "../useTweenedNumber";
 import { Reasons } from "./Reasons";
 import { RiskScale } from "./RiskScale";
 
 const MODEL_NAMES: Record<string, string> = { logreg: "Logistic regression", lgbm: "LightGBM" };
 
-export function DecisionPanel(props: { prediction: PredictionState; info: ModelInfo | null }) {
+export function DecisionPanel(props: { prediction: LiveState<PredictResponse>; info: ModelInfo | null; policy: Policy }) {
   const { result, loading, error } = props.prediction;
-  const { info } = props;
+  const { info, policy } = props;
   const probability = result?.probability_of_default ?? null;
   const threshold = result?.threshold ?? info?.policy.threshold ?? 0.15;
   const shown = useTweenedNumber(probability ?? 0);
@@ -50,9 +51,14 @@ export function DecisionPanel(props: { prediction: PredictionState; info: ModelI
 
       <RiskScale probability={probability} threshold={threshold} average={info?.average_default_rate ?? null} />
 
-      {probability !== null && info && (
+      {probability !== null && info && result && (
         <p className="panel-compare">
-          <strong>{(probability / info.average_default_rate).toFixed(1)}×</strong> the average applicant's risk
+          <strong>{(probability / info.average_default_rate).toFixed(1)}×</strong> the average applicant's risk ·
+          expected profit if approved{" "}
+          <strong className={result.expected_profit >= 0 ? "is-gain" : "is-loss"}>
+            {result.expected_profit >= 0 ? "+" : "−"}
+            {formatAmount(Math.abs(result.expected_profit))}
+          </strong>
         </p>
       )}
 
@@ -62,9 +68,12 @@ export function DecisionPanel(props: { prediction: PredictionState; info: ModelI
         <footer className="panel-foot">
           <span>{MODEL_NAMES[info.model_type] ?? info.model_type}</span>
           <span>Test ROC-AUC {(info.test_roc_auc ?? info.validation_roc_auc).toFixed(3)}</span>
-          <span>
-            Policy: {formatPercent(info.policy.lgd, 0)} loss on default, {formatPercent(info.policy.margin, 0)} margin
-          </span>
+          <Link to="/portfolio" className="panel-policy">
+            {policy.threshold_override !== null
+              ? `Manual cut-off ${formatPercent(policy.threshold_override)}`
+              : `Policy: ${formatPercent(policy.lgd, 0)} loss, ${formatPercent(policy.margin, 0)} margin`}{" "}
+            · change →
+          </Link>
         </footer>
       )}
     </aside>

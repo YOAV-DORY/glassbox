@@ -213,6 +213,11 @@ function HowItWorks({ info }: { info: ModelInfo | null }) {
                 {formatPercent(policy.lgd, 0)}) = <strong>{formatPercent(policy.threshold)}</strong>
               </p>
             )}
+            {step.formula && (
+              <Link to="/portfolio" className="step-link">
+                Try other numbers in the portfolio simulator →
+              </Link>
+            )}
             {step.note && <p className="step-note">{step.note}</p>}
             {step.status && <span className="step-status">{step.status}</span>}
           </li>

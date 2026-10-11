@@ -1,4 +1,12 @@
-import type { Applicant, ApplicantDraft, ModelInfo, PredictResponse, RiskSurface } from "./types";
+import type {
+  Applicant,
+  ApplicantDraft,
+  ModelInfo,
+  Policy,
+  PortfolioResponse,
+  PredictResponse,
+  RiskSurface,
+} from "./types";
 
 // Vite forwards /api/* to FastAPI (see vite.config.ts).
 const BASE = "/api";
@@ -29,13 +37,21 @@ export function fetchRiskSurface(): Promise<RiskSurface> {
   return request<RiskSurface>("/model/surface");
 }
 
-export function predict(applicant: Applicant, signal: AbortSignal): Promise<PredictResponse> {
-  return request<PredictResponse>("/predict", {
+function post<T>(path: string, body: unknown, signal: AbortSignal): Promise<T> {
+  return request<T>(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ applicant }),
+    body: JSON.stringify(body),
     signal,
   });
+}
+
+export function predict(applicant: Applicant, policy: Policy, signal: AbortSignal): Promise<PredictResponse> {
+  return post<PredictResponse>("/predict", { applicant, policy }, signal);
+}
+
+export function simulatePortfolio(policy: Policy, signal: AbortSignal): Promise<PortfolioResponse> {
+  return post<PortfolioResponse>("/portfolio/simulate", policy, signal);
 }
 
 /** Returns a complete Applicant, or a message saying what is still missing. */

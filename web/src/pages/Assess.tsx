@@ -1,13 +1,14 @@
 import { useState } from "react";
 
+import { predict, validateDraft } from "../api";
 import { ApplicantForm } from "../components/ApplicantForm";
 import { stagger } from "../components/controls";
 import { DecisionPanel } from "../components/DecisionPanel";
 import { KineticText } from "../components/kinetic";
 import { EXAMPLES } from "../examples";
 import { formatPercent } from "../format";
-import type { ApplicantDraft, ModelInfo } from "../types";
-import { usePrediction } from "../usePrediction";
+import type { ApplicantDraft, ModelInfo, Policy, PredictResponse } from "../types";
+import { useLiveRequest } from "../useLiveRequest";
 
 const START = EXAMPLES[1]; // open on the borderline case: the most interesting one
 
@@ -17,10 +18,14 @@ const HOW_TO = [
   "Change one thing at a time to see what moves the risk.",
 ];
 
-export function Assess({ info }: { info: ModelInfo | null }) {
+export function Assess({ info, policy }: { info: ModelInfo | null; policy: Policy }) {
   const [draft, setDraft] = useState<ApplicantDraft>(START.applicant);
   const [activeExample, setActiveExample] = useState<string | null>(START.id);
-  const prediction = usePrediction(draft);
+  // Re-score whenever the applicant or the lending policy changes.
+  const prediction = useLiveRequest<PredictResponse>((signal) => {
+    const applicant = validateDraft(draft);
+    return typeof applicant === "string" ? applicant : predict(applicant, policy, signal);
+  }, [draft, policy]);
 
   // Typed so each key only accepts its own value type (e.g. own_car only takes a boolean).
   const setField = <K extends keyof ApplicantDraft>(key: K, value: ApplicantDraft[K]) => {
@@ -61,7 +66,7 @@ export function Assess({ info }: { info: ModelInfo | null }) {
       <div className="workspace">
         <ApplicantForm draft={draft} setField={setField} activeExample={activeExample} onExample={loadExample} />
         <div className="panel-wrap load-in" style={stagger(4)}>
-          <DecisionPanel prediction={prediction} info={info} />
+          <DecisionPanel prediction={prediction} info={info} policy={policy} />
         </div>
       </div>
 
