@@ -101,7 +101,7 @@ jobs:
           GLASSBOX_ARTIFACTS_DIR: artifacts/demo
         run: |
           uvicorn api.serve:app --port 8000 &
-          curl --silent --fail --retry 20 --retry-connrefused --retry-delay 1 http://localhost:8000/api/health
+          curl --silent --fail --retry 20 --retry-all-errors --retry-delay 1 http://localhost:8000/api/health
           curl --silent --fail http://localhost:8000/api/model/info | python -c "import json, sys; assert json.load(sys.stdin)['dataset'] == 'synthetic-demo'"
           curl --silent --fail -X POST http://localhost:8000/api/predict -H 'Content-Type: application/json' \
             -d '{"applicant": {"amt_credit": 675000, "amt_annuity": 32800, "amt_goods_price": 607500,
@@ -124,6 +124,11 @@ jobs:
       - name: Run and check
         run: |
           docker run --detach --publish 8000:8000 --name glassbox glassbox
-          curl --silent --fail --retry 30 --retry-connrefused --retry-delay 2 http://localhost:8000/api/health
+          # --retry-all-errors: Docker's port forwarder accepts connections (then resets them)
+          # before the app inside is listening, which --retry-connrefused alone doesn't cover.
+          curl --silent --fail --retry 30 --retry-all-errors --retry-delay 2 http://localhost:8000/api/health
           curl --silent --fail http://localhost:8000/assess | grep -q '<div id="root">'
-          docker logs glassbox
+
+      - name: Container logs
+        if: always()
+        run: docker logs glassbox
