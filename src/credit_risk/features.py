@@ -8,6 +8,19 @@ function wrapped in a scikit-learn FunctionTransformer.
 import pandas as pd
 from sklearn.preprocessing import FunctionTransformer
 
+NUMERIC_INPUTS = [
+    "amt_credit",
+    "amt_annuity",
+    "amt_goods_price",
+    "amt_income_total",
+    "years_employed",
+    "ext_source_1",
+    "ext_source_2",
+    "ext_source_3",
+    "cnt_children",
+    "region_rating",
+]
+
 ENGINEERED_FEATURES = [
     "payment_to_income",
     "credit_to_income",
@@ -19,6 +32,10 @@ ENGINEERED_FEATURES = [
 
 def add_engineered_features(applicants: pd.DataFrame) -> pd.DataFrame:
     df = applicants.copy()
+    # An API request with "ext_source_1": null arrives as Python None, and a column holding
+    # only None has the generic "object" type, which LightGBM rejects. Training data has
+    # proper numeric NaN. Casting here makes both paths identical (avoids train/serve skew).
+    df[NUMERIC_INPUTS] = df[NUMERIC_INPUTS].astype("float64")
     # Affordability, similar to a debt-to-income ratio. The dataset does not document
     # whether annuity and income are monthly or yearly, so treat ratios as relative signals.
     df["payment_to_income"] = df["amt_annuity"] / df["amt_income_total"]
