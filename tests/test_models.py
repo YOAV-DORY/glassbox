@@ -1,3 +1,5 @@
+from itertools import pairwise
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -47,7 +49,7 @@ def test_calibration_table_has_ten_ordered_deciles_that_match_honest_probabiliti
     table = calibration_table(y, p)
     assert [row["decile"] for row in table] == list(range(1, 11))
     assert sum(row["n"] for row in table) == p.size
-    assert all(a["high"] <= b["low"] for a, b in zip(table, table[1:]))  # deciles don't overlap
+    assert all(a["high"] <= b["low"] for a, b in pairwise(table))  # deciles don't overlap
     for row in table:  # honest probabilities: each decile's actual rate within ~4 standard errors
         assert abs(row["actual_rate"] - row["mean_predicted"]) < 4 * row["actual_se"]
 

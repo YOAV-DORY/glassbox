@@ -28,6 +28,12 @@ export function App() {
   return (
     <div className="app">
       <TopBar page={page} info={info} offline={offline} />
+      {info?.dataset === "synthetic-demo" && (
+        <p className="demo-banner" role="status">
+          <strong>Demo mode.</strong> This model was trained on synthetic applicants generated in code, so every
+          number on these pages is illustrative. The real results are in the README.
+        </p>
+      )}
       {/* key={page}: switching pages remounts it, which replays its entrance animations */}
       {page === "assess" && <Assess key={page} info={info} policy={policy} />}
       {page === "portfolio" && <Portfolio key={page} policy={policy} setPolicy={setPolicy} />}

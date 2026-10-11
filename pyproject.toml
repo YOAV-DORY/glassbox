@@ -41,3 +41,15 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]  # lets tests import the top-level `api` package (added in M1)
+
+[tool.ruff]
+line-length = 130
+target-version = "py311"
+extend-exclude = [".venv", "notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = [
+    "E501",  # long lines are a judgement call, not enforced
+    "RUF001", "RUF002", "RUF003",  # deliberate typographic characters in UI strings (×, −, –)
+]

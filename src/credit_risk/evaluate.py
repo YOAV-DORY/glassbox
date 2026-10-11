@@ -117,7 +117,7 @@ def plot_evaluation(y_true: np.ndarray, predictions: dict[str, np.ndarray], out_
     paths = []
 
     fig, ax = plt.subplots(figsize=(5, 4.5))
-    for (name, p), color in zip(predictions.items(), colors):
+    for (name, p), color in zip(predictions.items(), colors, strict=False):
         fpr, tpr, _ = roc_curve(y_true, p)
         ax.plot(fpr, tpr, color=color, label=f"{name} (AUC {roc_auc_score(y_true, p):.3f})")
     ax.plot([0, 1], [0, 1], color=MUTED, linestyle="--", label="Random")
@@ -127,7 +127,7 @@ def plot_evaluation(y_true: np.ndarray, predictions: dict[str, np.ndarray], out_
     paths.append(_save(fig, out_dir / "roc.png"))
 
     fig, ax = plt.subplots(figsize=(5, 4.5))
-    for (name, p), color in zip(predictions.items(), colors):
+    for (name, p), color in zip(predictions.items(), colors, strict=False):
         precision, recall, _ = precision_recall_curve(y_true, p)
         ax.plot(recall, precision, color=color,
                 label=f"{name} (PR-AUC {average_precision_score(y_true, p):.3f})")
@@ -139,7 +139,7 @@ def plot_evaluation(y_true: np.ndarray, predictions: dict[str, np.ndarray], out_
 
     fig, ax = plt.subplots(figsize=(5, 4.5))
     upper = 0.0
-    for (name, p), color in zip(predictions.items(), colors):
+    for (name, p), color in zip(predictions.items(), colors, strict=False):
         actual, predicted = calibration_curve(y_true, p, n_bins=10, strategy="quantile")
         ax.plot(predicted, actual, marker="o", markersize=4, color=color, label=name)
         upper = max(upper, actual.max(), predicted.max())

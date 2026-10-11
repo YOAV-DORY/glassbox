@@ -79,6 +79,7 @@ export interface PredictResponse {
 export interface ModelInfo {
   model_version: string;
   model_type: string;
+  dataset: string; // "home-credit", or "synthetic-demo" for the demo model
   trained_at: string;
   train_rows: number;
   validation_roc_auc: number;

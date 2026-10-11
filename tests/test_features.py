@@ -3,9 +3,9 @@ import pandas as pd
 import pytest
 
 from credit_risk.config import MODEL_INPUTS
+from credit_risk.data import clean
 from credit_risk.features import add_engineered_features
 from credit_risk.train import train_logreg
-from credit_risk.data import clean
 from tests.conftest import VALID_APPLICANT, make_raw_df
 
 

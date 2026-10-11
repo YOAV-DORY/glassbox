@@ -1,4 +1,5 @@
 {
+  "dataset": "home-credit",
   "selected_model": "lgbm",
   "selection_rule": "highest validation ROC-AUC; test set scored once, after selection",
   "lgbm_trees": 468,

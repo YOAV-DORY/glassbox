@@ -85,6 +85,7 @@ def model_info() -> ModelInfo:
     return ModelInfo(
         model_version=metadata["model_version"],
         model_type=metadata["model_type"],
+        dataset=metadata.get("dataset", "home-credit"),
         trained_at=metadata["trained_at"],
         train_rows=metadata["train_rows"],
         validation_roc_auc=val["roc_auc"],

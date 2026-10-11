@@ -531,7 +531,6 @@ input[type="range"]:disabled {
   border-radius: 20px;
   background: var(--glass);
   backdrop-filter: blur(7px) saturate(1.4);
-  -webkit-backdrop-filter: blur(7px) saturate(1.4);
   border: 1px solid rgba(255, 255, 255, 0.8);
   box-shadow:
     0 0 0 1px rgba(21, 23, 28, 0.07),
@@ -1023,7 +1022,6 @@ input[type="range"]:disabled {
     border-radius: 16px;
     background: rgba(21, 23, 28, 0.92);
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     color: var(--paper);
     box-shadow: 0 16px 40px -12px rgba(21, 23, 28, 0.5);
   }

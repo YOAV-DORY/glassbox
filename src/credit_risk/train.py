@@ -12,6 +12,7 @@ import json
 import subprocess
 from datetime import UTC, datetime
 from importlib.metadata import version
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -28,11 +29,11 @@ from credit_risk.config import (
     TARGET,
     VALIDATION_COHORT_FILE,
 )
-from credit_risk.data import load_splits
+from credit_risk.data import clean, load_raw, split
+from credit_risk.decision import cost_based_threshold
 from credit_risk.evaluate import basic_metrics, calibration_table, paired_bootstrap_auc, plot_evaluation
 from credit_risk.explain import LABELS, Explainer, global_importance, plot_importance
 from credit_risk.fairness import audit
-from credit_risk.decision import cost_based_threshold
 from credit_risk.models import build_logreg_pipeline, fit_lgbm
 from credit_risk.whatif import plot_risk_map
 
@@ -81,7 +82,10 @@ def reference_applicant(train_df: pd.DataFrame) -> dict[str, Any]:
 def git_commit() -> str:
     """Which code produced the model; "-dirty" means there were uncommitted changes."""
     def git(*args: str) -> str:
-        result = subprocess.run(["git", *args], cwd=PROJECT_ROOT, capture_output=True, text=True)
+        try:
+            result = subprocess.run(["git", *args], cwd=PROJECT_ROOT, capture_output=True, text=True)
+        except FileNotFoundError:  # no git installed (e.g. inside the Docker image)
+            return ""
         return result.stdout.strip()
 
     commit = git("rev-parse", "--short", "HEAD") or "unknown"
@@ -114,11 +118,26 @@ def build_metadata(
     }
 
 
-def main() -> None:
-    splits = load_splits()
-    y_val, y_test = splits.val[TARGET].to_numpy(), splits.test[TARGET].to_numpy()
+def run(
+    raw: pd.DataFrame,
+    out_dir: Path,
+    reports_dir: Path,
+    dataset: str,
+    n_boot: int = 1000,
+    verbose: bool = True,
+) -> dict[str, Any]:
+    """The whole training protocol, from raw Kaggle-format rows to saved model and reports.
 
-    print("Training logistic regression and LightGBM...")
+    Used for the real data (main), the synthetic demo (credit_risk.demo) and the end-to-end
+    test, so all three follow exactly the same steps.
+    """
+    say = print if verbose else (lambda *args: None)
+    splits = split(clean(raw))
+    y_val, y_test = splits.val[TARGET].to_numpy(), splits.test[TARGET].to_numpy()
+    figures_dir = reports_dir / "figures"
+    threshold = cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN)
+
+    say("Training logistic regression and LightGBM...")
     models = {"logreg": train_logreg(splits.train), "lgbm": fit_lgbm(splits.train, splits.val)}
     val_predictions = {name: predict_default_proba(m, splits.val) for name, m in models.items()}
     val_metrics = {name: basic_metrics(y_val, p) for name, p in val_predictions.items()}
@@ -127,11 +146,10 @@ def main() -> None:
     # The model is chosen. Now, and only now, look at the test set.
     test_predictions = {name: predict_default_proba(m, splits.test) for name, m in models.items()}
     test_metrics = {name: basic_metrics(y_test, p) for name, p in test_predictions.items()}
-    figures = plot_evaluation(
-        y_test, {MODEL_NAMES[name]: p for name, p in test_predictions.items()}, REPORTS_DIR / "figures"
-    )
+    figures = plot_evaluation(y_test, {MODEL_NAMES[name]: p for name, p in test_predictions.items()}, figures_dir)
 
     report = {
+        "dataset": dataset,
         "selected_model": best,
         "selection_rule": "highest validation ROC-AUC; test set scored once, after selection",
         "lgbm_trees": int(models["lgbm"][-1].best_iteration_),
@@ -141,7 +159,7 @@ def main() -> None:
         # the model was already chosen on validation, and nothing is refitted).
         "test_auc_bootstrap": {
             "models": {"a": "logreg", "b": "lgbm"},
-            **paired_bootstrap_auc(y_test, test_predictions["logreg"], test_predictions["lgbm"]),
+            **paired_bootstrap_auc(y_test, test_predictions["logreg"], test_predictions["lgbm"], n_boot=n_boot),
         },
         # Predicted vs actual default rate per decile, for the selected model. Validation is what
         # the simulator works on; test is the final check, scored once like everything else here.
@@ -150,37 +168,41 @@ def main() -> None:
             "test": calibration_table(y_test, test_predictions[best]),
         },
     }
-    REPORTS_DIR.mkdir(exist_ok=True)
-    (REPORTS_DIR / "metrics.json").write_text(json.dumps(report, indent=2))
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    (reports_dir / "metrics.json").write_text(json.dumps(report, indent=2))
 
     metadata = build_metadata(best, splits.train, val_metrics[best], test_metrics[best])
+    metadata["dataset"] = dataset
     if best == "lgbm":  # SHAP's TreeExplainer needs a tree model
         explainer = Explainer(models[best])
-        sample = splits.test.sample(10_000, random_state=0)  # SHAP on 61k rows adds little
+        sample = splits.test.sample(min(10_000, len(splits.test)), random_state=0)  # more rows add little
         importance = global_importance(explainer, sample)
         metadata["global_importance"] = [
             {"feature": f, "label": LABELS[f], "importance": round(float(v), 4)} for f, v in importance.items()
         ]
-        figures += plot_importance(explainer, sample, REPORTS_DIR / "figures")
-    save_artifacts(models[best], metadata, artifacts_dir())
+        figures += plot_importance(explainer, sample, figures_dir)
+    save_artifacts(models[best], metadata, out_dir)
+
     # Policy and fairness analysis run on validation: users explore it interactively, and
     # nothing interactive may touch the test set, which is kept for the headline metrics.
     validation_cohort = cohort_frame(models[best], splits.val)
-    save_cohort(validation_cohort, artifacts_dir(), VALIDATION_COHORT_FILE)
-    fairness = audit(validation_cohort, cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN))
+    save_cohort(validation_cohort, out_dir, VALIDATION_COHORT_FILE)
+    fairness = audit(validation_cohort, threshold)
     fairness["cohort"] = "validation"
-    (REPORTS_DIR / "fairness.json").write_text(json.dumps(fairness, indent=2, default=float))
-    figures.append(plot_risk_map(
-        models[best], metadata["reference_applicant"], cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN),
-        REPORTS_DIR / "figures" / "risk_map.png",
-    ))
+    (reports_dir / "fairness.json").write_text(json.dumps(fairness, indent=2, default=float))
+    figures.append(plot_risk_map(models[best], metadata["reference_applicant"], threshold, figures_dir / "risk_map.png"))
 
-    table = pd.DataFrame({f"{MODEL_NAMES[n]} ({split})": m for split, ms in
+    table = pd.DataFrame({f"{MODEL_NAMES[n]} ({split_name})": m for split_name, ms in
                           (("val", val_metrics), ("test", test_metrics)) for n, m in ms.items()})
-    print(table.round(4).to_string())
-    print(f"\nLightGBM stopped at {report['lgbm_trees']} trees.")
-    print(f"Selected {MODEL_NAMES[best]} -> saved {metadata['model_version']} to {artifacts_dir()}")
-    print("Figures:", ", ".join(str(p.relative_to(PROJECT_ROOT)) for p in figures))
+    say(table.round(4).to_string())
+    say(f"\nLightGBM stopped at {report['lgbm_trees']} trees.")
+    say(f"Selected {MODEL_NAMES[best]} -> saved {metadata['model_version']} to {out_dir}")
+    say("Figures:", ", ".join(str(p) for p in figures))
+    return report
+
+
+def main() -> None:
+    run(load_raw(), artifacts_dir(), REPORTS_DIR, dataset="home-credit")
 
 
 if __name__ == "__main__":

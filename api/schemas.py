@@ -116,6 +116,7 @@ class Policy(BaseModel):
 class ModelInfo(BaseModel):
     model_version: str
     model_type: str
+    dataset: str  # "home-credit", or "synthetic-demo" for the demo model
     trained_at: str
     train_rows: int
     validation_roc_auc: float

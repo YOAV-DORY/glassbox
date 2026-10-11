@@ -112,7 +112,6 @@ select {
   padding: 18px var(--gutter);
   background: rgba(243, 239, 230, 0.78);
   backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
   border-bottom: 1px solid var(--rule-soft);
 }
 
@@ -216,6 +215,15 @@ select {
 .status.is-down i {
   background: var(--decline);
   box-shadow: 0 0 0 3px rgba(192, 57, 27, 0.15);
+}
+
+.demo-banner {
+  margin: 0;
+  padding: 10px var(--gutter);
+  background: #fbe9c6;
+  border-bottom: 1px solid #e8cf98;
+  font-size: 14px;
+  color: #5c4310;
 }
 
 /* ---------- Buttons ---------- */
