@@ -3,9 +3,9 @@ requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "credit-risk"
+name = "glassbox"
 version = "0.1.0"
-description = "Explainable credit-risk model and loan decision app (Home Credit data)"
+description = "Glassbox: explainable credit-risk model and loan decision app (Home Credit data)"
 readme = "README.md"
 requires-python = ">=3.12"
 # Exact pins on purpose: this is an app, not a library. The saved model is a
