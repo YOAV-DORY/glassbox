@@ -83,5 +83,6 @@ def trained_artifacts_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     out_dir = tmp_path_factory.mktemp("artifacts")
     df = clean(make_raw_df(n=2000))
     pipeline = train(df)
-    save_artifacts(pipeline, build_metadata("logreg", len(df), {"roc_auc": 0.5}), out_dir)
+    metrics = {"roc_auc": 0.5, "pr_auc": 0.08, "actual_default_rate": 0.08}
+    save_artifacts(pipeline, build_metadata("logreg", len(df), metrics), out_dir)
     return out_dir

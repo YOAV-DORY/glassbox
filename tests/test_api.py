@@ -25,6 +25,15 @@ def test_health(client: TestClient) -> None:
     assert body["model_version"].startswith("logreg-")
 
 
+def test_model_info_reports_metrics_and_policy(client: TestClient) -> None:
+    response = client.get("/model/info")
+    assert response.status_code == 200
+    body = response.json()
+    assert 0 < body["average_default_rate"] < 1
+    policy = body["policy"]
+    assert policy["threshold"] == pytest.approx(policy["margin"] / (policy["margin"] + policy["lgd"]))
+
+
 def test_predict_returns_probability_and_consistent_decision(client: TestClient) -> None:
     response = client.post("/predict", json={"applicant": VALID_APPLICANT})
     assert response.status_code == 200

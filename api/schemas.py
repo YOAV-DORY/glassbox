@@ -68,5 +68,19 @@ class PredictResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: Literal["ok"]
     model_version: str
+
+
+class Policy(BaseModel):
+    lgd: float
+    margin: float
+    threshold: float
+
+
+class ModelInfo(BaseModel):
+    model_version: str
     model_type: str
+    trained_at: str
     validation_roc_auc: float
+    validation_pr_auc: float
+    average_default_rate: float  # in the validation data; context for a single prediction
+    policy: Policy
