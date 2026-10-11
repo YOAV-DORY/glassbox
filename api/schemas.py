@@ -80,7 +80,21 @@ class ModelInfo(BaseModel):
     model_version: str
     model_type: str
     trained_at: str
+    train_rows: int
     validation_roc_auc: float
     validation_pr_auc: float
+    test_roc_auc: float | None  # held-out test set, scored once after model selection
+    test_pr_auc: float | None
     average_default_rate: float  # in the validation data; context for a single prediction
     policy: Policy
+
+
+class RiskSurface(BaseModel):
+    """Predicted default risk over a grid of two inputs, all else held at a typical applicant."""
+
+    x_feature: str
+    y_feature: str
+    x: list[float]
+    y: list[float]
+    z: list[list[float]]  # z[i][j] = probability of default at y[i], x[j]
+    threshold: float

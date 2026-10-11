@@ -34,6 +34,12 @@ def test_model_info_reports_metrics_and_policy(client: TestClient) -> None:
     assert policy["threshold"] == pytest.approx(policy["margin"] / (policy["margin"] + policy["lgd"]))
 
 
+def test_model_surface_is_a_square_grid_of_probabilities(client: TestClient) -> None:
+    body = client.get("/model/surface").json()
+    assert len(body["z"]) == len(body["y"]) and all(len(row) == len(body["x"]) for row in body["z"])
+    assert all(0 < p < 1 for row in body["z"] for p in row)
+
+
 def test_predict_returns_probability_and_consistent_decision(client: TestClient) -> None:
     response = client.post("/predict", json={"applicant": VALID_APPLICANT})
     assert response.status_code == 200

@@ -12,22 +12,37 @@ from contextlib import asynccontextmanager
 import pandas as pd
 from fastapi import FastAPI
 
-from api.schemas import HealthResponse, ModelInfo, Policy, PredictRequest, PredictResponse
+from api.schemas import (
+    HealthResponse,
+    ModelInfo,
+    Policy,
+    PredictRequest,
+    PredictResponse,
+    RiskSurface,
+)
 from credit_risk.artifacts import artifacts_dir, load_artifacts
 from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS
 from credit_risk.decision import cost_based_threshold, decide
+from credit_risk.whatif import risk_surface
 
 DEFAULT_POLICY = Policy(
     lgd=DEFAULT_LGD,
     margin=DEFAULT_MARGIN,
     threshold=cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN),
 )
+SURFACE_FEATURES = ("ext_source_2", "ext_source_3")  # the two most informative inputs
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Fails at startup (not on the first request) if the model hasn't been trained.
     app.state.pipeline, app.state.metadata = load_artifacts(artifacts_dir())
+    # The surface never changes for a given model, so compute it once and reuse it.
+    x, y, z = risk_surface(app.state.pipeline, app.state.metadata["reference_applicant"], *SURFACE_FEATURES)
+    app.state.surface = RiskSurface(
+        x_feature=SURFACE_FEATURES[0], y_feature=SURFACE_FEATURES[1], x=x, y=y, z=z,
+        threshold=DEFAULT_POLICY.threshold,
+    )
     yield
 
 
@@ -42,16 +57,24 @@ def health() -> HealthResponse:
 @app.get("/model/info", response_model=ModelInfo)
 def model_info() -> ModelInfo:
     metadata = app.state.metadata
-    metrics = metadata["validation_metrics"]
+    val, test = metadata["validation_metrics"], metadata.get("test_metrics") or {}
     return ModelInfo(
         model_version=metadata["model_version"],
         model_type=metadata["model_type"],
         trained_at=metadata["trained_at"],
-        validation_roc_auc=metrics["roc_auc"],
-        validation_pr_auc=metrics["pr_auc"],
-        average_default_rate=metrics["actual_default_rate"],
+        train_rows=metadata["train_rows"],
+        validation_roc_auc=val["roc_auc"],
+        validation_pr_auc=val["pr_auc"],
+        test_roc_auc=test.get("roc_auc"),
+        test_pr_auc=test.get("pr_auc"),
+        average_default_rate=val["actual_default_rate"],
         policy=DEFAULT_POLICY,
     )
+
+
+@app.get("/model/surface", response_model=RiskSurface)
+def model_surface() -> RiskSurface:
+    return app.state.surface
 
 
 @app.post("/predict", response_model=PredictResponse)
