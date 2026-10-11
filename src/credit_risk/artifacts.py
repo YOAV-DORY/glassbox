@@ -6,6 +6,7 @@ the file format. Only load model files you created yourself: unpickling runs cod
 
 import json
 import os
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
@@ -44,3 +45,20 @@ def load_cohort(in_dir: Path, filename: str = VALIDATION_COHORT_FILE) -> pd.Data
     """Saved predictions for one split, or None if training hasn't produced them yet."""
     path = in_dir / filename
     return pd.read_parquet(path) if path.exists() else None
+
+
+def version_mismatches(metadata: dict[str, Any]) -> list[str]:
+    """Libraries whose installed version differs from the one that trained the saved model.
+
+    A pickled model usually still loads across minor versions, but it isn't guaranteed to
+    behave identically, so the API logs a warning rather than refusing to start.
+    """
+    problems = []
+    for library, trained_with in metadata.get("library_versions", {}).items():
+        try:
+            installed = version(library)
+        except PackageNotFoundError:
+            installed = "not installed"
+        if installed != trained_with:
+            problems.append(f"{library}: trained with {trained_with}, running {installed}")
+    return problems

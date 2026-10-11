@@ -7,30 +7,33 @@ name = "glassbox"
 version = "0.1.0"
 description = "Glassbox: explainable credit-risk model and loan decision app (Home Credit data)"
 readme = "README.md"
-requires-python = ">=3.12"
-# Exact pins on purpose: this is an app, not a library. The saved model is a
-# pickle, and pickles are only safe to load with the same library versions
-# that created them.
+requires-python = ">=3.11"
+# Compatible ranges, so `pip install` works on Python 3.11 to 3.13. The exact versions the
+# published results were produced with are in constraints.txt; use them to reproduce exactly:
+#   pip install -e ".[dev]" -c constraints.txt      (Python 3.12+)
+# The saved model is a pickle, so it must be loaded with the versions that trained it:
+# training records them in artifacts/metadata.json, and the API warns on a mismatch.
 dependencies = [
-    "pandas==3.0.6",
-    "numpy==2.5.3",
-    "scikit-learn==1.9.1",
-    "lightgbm==4.7.0",
-    "shap==0.53.0",
-    "matplotlib==3.11.2",
-    "pyarrow==26.0.0",
-    "joblib==1.6.0",
-    "fastapi==0.143.0",
-    "pydantic==2.14.0",
-    "uvicorn==0.54.0",
+    "pandas>=3.0,<4",
+    "numpy>=2.4,<3",
+    "scikit-learn>=1.6,<2",
+    "lightgbm>=4.7,<5",  # 4.7 added the eval_X / eval_y arguments used for early stopping
+    "shap>=0.51,<1",
+    "matplotlib>=3.9,<4",
+    "pyarrow>=17",
+    "joblib>=1.4",
+    "fastapi>=0.115",
+    "pydantic>=2.7,<3",
+    "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest==9.1.1",
-    "httpx2==2.13.1",  # FastAPI's TestClient; Starlette's recommended successor to httpx
-    "jupyterlab==4.6.4",
+    "pytest>=8",
+    "httpx2>=2.13",  # FastAPI's TestClient; Starlette's recommended successor to httpx
+    "ruff>=0.15",
 ]
+notebooks = ["jupyterlab>=4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -109,3 +109,15 @@ def test_portfolio_simulation_contract(client: TestClient) -> None:
 @pytest.mark.parametrize("policy", [{"lgd": 0}, {"margin": 1.5}, {"threshold_override": 1}, {"risk": 1}])
 def test_portfolio_rejects_invalid_policies(client: TestClient, policy: dict) -> None:
     assert client.post("/portfolio/simulate", json=policy).status_code == 422
+
+
+def test_version_mismatch_is_reported() -> None:
+    from importlib.metadata import version
+
+    from credit_risk.artifacts import version_mismatches
+
+    installed = version("numpy")
+    assert version_mismatches({"library_versions": {"numpy": "0.0.1"}}) == [
+        f"numpy: trained with 0.0.1, running {installed}"
+    ]
+    assert version_mismatches({"library_versions": {"numpy": installed}}) == []

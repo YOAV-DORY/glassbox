@@ -6,6 +6,7 @@ The trained pipeline is loaded once at startup. Requests only run predictions:
 nothing is ever trained at request time.
 """
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -29,7 +30,7 @@ from api.schemas import (
     Reason,
     RiskSurface,
 )
-from credit_risk.artifacts import artifacts_dir, load_artifacts, load_cohort
+from credit_risk.artifacts import artifacts_dir, load_artifacts, load_cohort, version_mismatches
 from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS
 from credit_risk.decision import cost_based_threshold, decide, expected_profit, portfolio_outcome, profit_curve
 from credit_risk.evaluate import calibration_table
@@ -50,6 +51,8 @@ CURVE_THRESHOLDS = np.round(np.arange(0.01, 0.601, 0.01), 2)  # cut-offs from 1%
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Fails at startup (not on the first request) if the model hasn't been trained.
     app.state.pipeline, app.state.metadata = load_artifacts(artifacts_dir())
+    for problem in version_mismatches(app.state.metadata):
+        logging.getLogger("glassbox").warning("Model/library version mismatch: %s", problem)
     # SHAP's TreeExplainer only works for tree models; a logistic regression gets no reasons.
     is_tree = app.state.metadata["model_type"] == "lgbm"
     app.state.explainer = Explainer(app.state.pipeline) if is_tree else None
