@@ -46,6 +46,28 @@
       "actual_default_rate": 0.0807
     }
   },
+  "test_auc_bootstrap": {
+    "models": {
+      "a": "logreg",
+      "b": "lgbm"
+    },
+    "a": {
+      "estimate": 0.7448,
+      "low": 0.7379,
+      "high": 0.7512
+    },
+    "b": {
+      "estimate": 0.7632,
+      "low": 0.7564,
+      "high": 0.7694
+    },
+    "difference": {
+      "estimate": 0.0185,
+      "low": 0.0158,
+      "high": 0.0214
+    },
+    "n_boot": 1000
+  },
   "calibration_deciles": {
     "validation": [
       {

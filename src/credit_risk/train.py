@@ -29,7 +29,7 @@ from credit_risk.config import (
     VALIDATION_COHORT_FILE,
 )
 from credit_risk.data import load_splits
-from credit_risk.evaluate import basic_metrics, calibration_table, plot_evaluation
+from credit_risk.evaluate import basic_metrics, calibration_table, paired_bootstrap_auc, plot_evaluation
 from credit_risk.explain import LABELS, Explainer, global_importance, plot_importance
 from credit_risk.fairness import audit
 from credit_risk.decision import cost_based_threshold
@@ -137,6 +137,12 @@ def main() -> None:
         "lgbm_trees": int(models["lgbm"][-1].best_iteration_),
         "validation": {name: rounded(m) for name, m in val_metrics.items()},
         "test": {name: rounded(m) for name, m in test_metrics.items()},
+        # How much the test AUCs would move with a different sample of applicants (reporting only:
+        # the model was already chosen on validation, and nothing is refitted).
+        "test_auc_bootstrap": {
+            "models": {"a": "logreg", "b": "lgbm"},
+            **paired_bootstrap_auc(y_test, test_predictions["logreg"], test_predictions["lgbm"]),
+        },
         # Predicted vs actual default rate per decile, for the selected model. Validation is what
         # the simulator works on; test is the final check, scored once like everything else here.
         "calibration_deciles": {

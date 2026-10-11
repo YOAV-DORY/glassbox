@@ -59,6 +59,40 @@ def calibration_table(y_true: np.ndarray, p_default: np.ndarray, n_bins: int = 1
     ]
 
 
+def paired_bootstrap_auc(
+    y_true: np.ndarray, p_a: np.ndarray, p_b: np.ndarray, n_boot: int = 1000, seed: int = 0
+) -> dict[str, dict[str, float]]:
+    """95% confidence intervals for two models' ROC-AUC and for their difference (b - a).
+
+    Resample applicants with replacement, recompute both AUCs on the *same* resample, repeat.
+    Pairing matters: both models face the same easy and hard applicants in each resample, so
+    the interval for the difference is much tighter than comparing two separate intervals.
+    Nothing is refitted; this only measures how much the scores move with the sample.
+    """
+    y_true, p_a, p_b = np.asarray(y_true), np.asarray(p_a), np.asarray(p_b)
+    rng = np.random.default_rng(seed)
+    a_scores, b_scores = [], []
+    for _ in range(n_boot):
+        idx = rng.integers(0, len(y_true), len(y_true))
+        if y_true[idx].min() == y_true[idx].max():
+            continue  # a resample with one class has no AUC (only possible on tiny samples)
+        a_scores.append(roc_auc_score(y_true[idx], p_a[idx]))
+        b_scores.append(roc_auc_score(y_true[idx], p_b[idx]))
+    a, b = np.array(a_scores), np.array(b_scores)
+
+    def summary(estimate: float, samples: np.ndarray) -> dict[str, float]:
+        low, high = np.percentile(samples, [2.5, 97.5])
+        return {"estimate": round(float(estimate), 4), "low": round(float(low), 4), "high": round(float(high), 4)}
+
+    auc_a, auc_b = roc_auc_score(y_true, p_a), roc_auc_score(y_true, p_b)
+    return {
+        "a": summary(auc_a, a),
+        "b": summary(auc_b, b),
+        "difference": summary(auc_b - auc_a, b - a),
+        "n_boot": len(a),
+    }
+
+
 def basic_metrics(y_true: np.ndarray, p_default: np.ndarray) -> dict[str, float]:
     y_true, p_default = np.asarray(y_true), np.asarray(p_default)
     auc = roc_auc_score(y_true, p_default)

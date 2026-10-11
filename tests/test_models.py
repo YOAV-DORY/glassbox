@@ -3,7 +3,12 @@ import pandas as pd
 import pytest
 
 from credit_risk.config import MODEL_INPUTS
-from credit_risk.evaluate import calibration_table, expected_calibration_error, ks_statistic
+from credit_risk.evaluate import (
+    calibration_table,
+    expected_calibration_error,
+    ks_statistic,
+    paired_bootstrap_auc,
+)
 from tests.conftest import VALID_APPLICANT
 
 
@@ -45,3 +50,20 @@ def test_calibration_table_has_ten_ordered_deciles_that_match_honest_probabiliti
     assert all(a["high"] <= b["low"] for a, b in zip(table, table[1:]))  # deciles don't overlap
     for row in table:  # honest probabilities: each decile's actual rate within ~4 standard errors
         assert abs(row["actual_rate"] - row["mean_predicted"]) < 4 * row["actual_se"]
+
+
+def test_paired_bootstrap_separates_a_real_gap_and_not_a_fake_one() -> None:
+    rng = np.random.default_rng(2)
+    y = (rng.random(3000) < 0.2).astype(int)
+    signal = y + rng.normal(0, 1.0, y.size)  # informative score
+    noise = rng.random(y.size)  # useless score
+
+    real = paired_bootstrap_auc(y, noise, signal, n_boot=200)
+    assert real["b"]["low"] <= real["b"]["estimate"] <= real["b"]["high"]
+    assert real["difference"]["low"] > 0  # the informative model is clearly better
+
+    same = paired_bootstrap_auc(y, signal, signal + rng.normal(0, 1e-6, y.size), n_boot=200)
+    assert same["difference"]["low"] <= 0 <= same["difference"]["high"]  # no real difference
+
+    again = paired_bootstrap_auc(y, noise, signal, n_boot=200)
+    assert again == real  # fixed seed: the same intervals every run

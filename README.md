@@ -50,12 +50,18 @@ Glassbox is built around those three points, on the public
 
 Held-out **test set** (61,503 applicants), scored once, after the model was chosen on validation.
 
-| Model | ROC-AUC | Gini | PR-AUC | KS | Brier | Calibration error |
+| Model | ROC-AUC [95% CI] | Gini | PR-AUC | KS | Brier | Calibration error |
 |---|---|---|---|---|---|---|
-| Logistic regression (baseline) | 0.745 | 0.490 | 0.231 | 0.363 | 0.0685 | 0.3 pts |
-| **LightGBM (served)** | **0.763** | **0.526** | **0.250** | **0.394** | **0.0676** | **0.3 pts** |
+| Logistic regression (baseline) | 0.745 [0.738, 0.751] | 0.490 | 0.231 | 0.363 | 0.0685 | 0.3 pts |
+| **LightGBM (served)** | **0.763 [0.756, 0.769]** | **0.526** | **0.250** | **0.394** | **0.0676** | **0.3 pts** |
 
-A random model scores ROC-AUC 0.5 and PR-AUC 0.081 (the default rate).
+A random model scores ROC-AUC 0.5 and PR-AUC 0.081 (the default rate). Intervals come from a paired
+bootstrap over the test applicants (1,000 resamples, no refitting).
+
+- **LightGBM's edge over the baseline is small but real for this test set:** +0.018 AUC, 95% CI
+  [+0.016, +0.021]. The interval covers sampling noise in the test applicants only, not how much either
+  model would change if retrained on a different training sample. A linear model with sensible features
+  gets most of the way there.
 
 <p>
   <img src="reports/figures/calibration.png" width="49%" alt="Calibration curves">
@@ -68,101 +74,10 @@ A random model scores ROC-AUC 0.5 and PR-AUC 0.081 (the default rate).
 - **The risk map** (right) is the served model with two credit scores varied and everything else held
   at a typical applicant. Steps come from tree thresholds; risk only falls towards higher scores
   (the monotone constraint); the dashed line is the policy cut-off.
-- **20 features vs. all 117:** the curated set scored 0.758 validation ROC-AUC vs. 0.753 for every raw
-  column, likely thanks to the engineered ratios
-  ([notebook 02](notebooks/02_feature_set_tradeoff.ipynb)). The small set makes the form usable and the
-  reasons readable, at no cost in accuracy.
-
-### The policy, in money
-
-![Portfolio simulator](docs/images/portfolio.jpg)
-
-The simulator replays a policy on the **validation** cohort (61,502 applicants with known outcomes);
-the test set is never used interactively. At the default policy (60% loss, 10% margin):
-
-| Rule | Cut-off | Approved | Default among approved | Expected profit | Realized profit |
-|---|---|---|---|---|---|
-| **Cost-based policy** | **14.3%** | **85.3%** | **5.41%** | **+2.08B** | **+2.03B** |
-| Approve everyone | none | 100% | 8.07% | +1.74B | +1.72B |
-| 50% cut-off | 50% | 99.4% | 7.81% | +1.80B | +1.77B |
-
-- **Expected** figures use only the model's probabilities; **realized** ones use what happened. Expected
-  losses on approved loans were 0.97B against 1.02B realized: the model is about 4% optimistic on losses.
-- The most profitable cut-off on this cohort is 13%, a point below the formula's 14.3%, consistent with
-  the slight under-prediction around the cut-off shown below.
-- A 50% cut-off barely differs from approving everyone: almost nobody scores above 50%.
-- **Selection bias:** outcomes exist only for loans the lender approved. Declining one of them here is a
-  what-if on an approved loan, so decline-side results (losses avoided, profit given up) are assumptions,
-  not measurements of how rejected applicants would behave.
-- Profit is in the dataset's unnamed currency, with no timing, prepayment or partial recoveries.
-
-**Calibration by decile** (served model, test set, scored once). The cut-off formula is only as good as
-the probabilities near the cut-off, so a single average error is not enough evidence:
-
-| Decile | Predictions | Average prediction | Actual default rate (± 1 SE) |
-|---|---|---|---|
-| 1 | 0.1–1.6% | 1.1% | 1.1% ± 0.1 |
-| 2 | 1.6–2.4% | 2.0% | 2.0% ± 0.2 |
-| 3 | 2.4–3.2% | 2.8% | 2.8% ± 0.2 |
-| 4 | 3.2–4.2% | 3.7% | 3.5% ± 0.2 |
-| 5 | 4.2–5.3% | 4.7% | 4.4% ± 0.3 |
-| 6 | 5.3–6.7% | 5.9% | 6.4% ± 0.3 |
-| 7 | 6.7–8.6% | 7.5% | 7.6% ± 0.3 |
-| 8 | 8.6–11.5% | 9.9% | 10.7% ± 0.4 |
-| 9 | 11.5–17.5% | 14.1% | 14.3% ± 0.4 |
-| 10 | 17.5–83.4% | 28.8% | 28.1% ± 0.6 |
-
-The 14.3% cut-off falls in decile 9. There, test agrees closely (14.1% predicted, 14.3% actual), while
-validation shows a 1.2-point under-prediction (14.4% vs 15.6% ± 0.5). The top decile is over-predicted
-on validation (29.0% vs 26.3%). Fair summary: near the cut-off the probabilities hold to within about a
-point, so the cut-off itself is uncertain by about that much. Both tables: [reports/metrics.json](reports/metrics.json).
-
-### Fairness audit
-
-Gender and age are not model inputs; they were kept aside only for this audit. Results at the default
-14.3% cut-off on the **validation** cohort (61,502 applicants; the test set is reserved for the headline
-metrics). Full numbers: [reports/fairness.json](reports/fairness.json).
-
-| Group | Applicants | Actual default rate | Model's average prediction | Approved | Approval ratio¹ | Repayers declined² |
-|---|---|---|---|---|---|---|
-| Women | 40,529 | 7.0% | 7.5% | 87.3% | 1.00 | 10.7% |
-| Men | 20,972 | 10.1% | 9.2% | 81.4% | 0.93 | 15.5% |
-| Under 30 | 8,972 | 11.3% | 12.9% | 69.1% | **0.72** | 26.9% |
-| 30–44 | 24,859 | 9.1% | 8.5% | 83.8% | 0.88 | 13.4% |
-| 45–59 | 20,719 | 6.5% | 6.6% | 90.5% | 0.95 | 7.9% |
-| 60+ | 6,952 | 4.8% | 5.0% | 95.7% | 1.00 | 3.6% |
-
-¹ Approval rate relative to the most-approved group in the same table; below 0.8 is the common
-"four-fifths" warning sign (a rule of thumb, not a legal test). ² Share of applicants who did repay but
-would have been declined.
-
-What this shows:
-- **Most of the approval gaps follow different default rates.** Men and younger applicants default more
-  often, so a single cut-off approves them less. The gender ratio (0.93) is above the four-fifths line.
-- **Under-30s fall below it (0.72), and not only because of their base rate.** The model overstates their
-  risk: it predicts 12.9% on average against 11.3% observed (standard error ≈ 0.3 points). Over a quarter
-  of under-30s who repaid would have been declined, against 4% of over-60s.
-- **Calibration differs by gender too:** the model overstates women's risk (7.5% vs 7.0%) and understates
-  men's (9.2% vs 10.1%), each about four standard errors. With gender excluded, the model cannot tell the
-  groups apart, so it lands between them.
-- **Removing age didn't remove age.** The "not employed" flag marks pensioners: 83% of over-60s carry it,
-  against 0.8% of under-45s. The model gives that flag the least weight of all 20 features (SHAP), but
-  years in current job, the 5th most important feature, also tracks age.
-
-What it doesn't show: whether any gap is legally justified (this is not a legal analysis), how the
-model treats applicants the lender rejected in the past (their outcomes don't exist), or anything about
-race or ethnicity (not in the data). Mitigations such as per-group calibration checks, reweighting or
-constrained training are discussed, not built.
-
-### What drives the model (SHAP)
-
-![SHAP beeswarm: one dot per applicant per feature](reports/figures/shap_beeswarm.png)
-
-Each dot is one test applicant; right of zero raises predicted risk, left lowers it; colour is the
-feature's value (grey for text categories). The three credit-bureau scores dominate, and high scores
-(red) always sit on the left: the monotone constraint at work. Loan length is non-linear: both short
-and long loans can raise risk. SHAP contributions are exact for tree models and add up to the model's
-score, which a test checks.
+- **20 features vs. all 117:** on validation the curated set scored 0.758 against 0.753 for every raw
+  column (+0.006, CI [+0.003, +0.009]), and removing its four engineered ratios cost 0.009 (CI [+0.007,
+  +0.011]) ([notebook 02](notebooks/02_feature_set_tradeoff.ipynb)). So the small set loses nothing here
+  and the ratios account for its slight edge; both differences are under 0.01 AUC, from one split.
 
 More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_importance.png), [precision-recall](reports/figures/precision_recall.png),
 [all metrics](reports/metrics.json), [exploratory analysis](notebooks/01_eda.ipynb).
