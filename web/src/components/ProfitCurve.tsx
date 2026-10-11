@@ -82,7 +82,13 @@ export function ProfitCurve(props: { data: PortfolioResponse; onPick: (threshold
 
       {/* Formula cut-off vs. the best cut-off in hindsight: close together means the probabilities are honest */}
       <line className="best-line" x1={x(data.best_threshold)} x2={x(data.best_threshold)} y1={PAD.top} y2={H - PAD.bottom} />
-      <text className="best-label" x={x(data.best_threshold) + 6} y={PAD.top + 10}>
+      {/* Near the right edge the label goes on the left of its line, so it never runs off the chart */}
+      <text
+        className="best-label"
+        x={x(data.best_threshold) + (data.best_threshold > 0.42 ? -6 : 6)}
+        y={PAD.top + 10}
+        textAnchor={data.best_threshold > 0.42 ? "end" : "start"}
+      >
         most profitable here {formatPercent(data.best_threshold, 0)}
       </text>
 

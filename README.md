@@ -10,6 +10,10 @@ working: in a live decision app, and in a 3D view of the model's actual risk sur
 
 ![Glassbox landing page](docs/images/landing.jpg)
 
+**Demo (68 s):** the decision desk reacting to a falling credit score, then the policy simulator.
+
+![Glassbox demo](docs/images/demo.gif)
+
 > **Status:** work in progress. Data, model, evaluation, reason codes, the policy simulator, the
 > fairness audit, API and app are done (milestones M0–M5).
 > See [docs/PLAN.md](docs/PLAN.md).
