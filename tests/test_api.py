@@ -22,7 +22,7 @@ def test_health(client: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["model_version"].startswith("logreg-")
+    assert body["model_version"].startswith("lgbm-")
 
 
 def test_model_info_reports_metrics_and_policy(client: TestClient) -> None:

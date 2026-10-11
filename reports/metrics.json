@@ -1,0 +1,49 @@
+{
+  "selected_model": "lgbm",
+  "selection_rule": "highest validation ROC-AUC; test set scored once, after selection",
+  "lgbm_trees": 468,
+  "validation": {
+    "logreg": {
+      "roc_auc": 0.7411,
+      "gini": 0.4823,
+      "pr_auc": 0.2195,
+      "ks": 0.36,
+      "brier": 0.0689,
+      "calibration_error": 0.002,
+      "mean_predicted": 0.0812,
+      "actual_default_rate": 0.0807
+    },
+    "lgbm": {
+      "roc_auc": 0.7584,
+      "gini": 0.5168,
+      "pr_auc": 0.2376,
+      "ks": 0.3874,
+      "brier": 0.0682,
+      "calibration_error": 0.0058,
+      "mean_predicted": 0.0812,
+      "actual_default_rate": 0.0807
+    }
+  },
+  "test": {
+    "logreg": {
+      "roc_auc": 0.7448,
+      "gini": 0.4895,
+      "pr_auc": 0.2312,
+      "ks": 0.3626,
+      "brier": 0.0685,
+      "calibration_error": 0.0032,
+      "mean_predicted": 0.0806,
+      "actual_default_rate": 0.0807
+    },
+    "lgbm": {
+      "roc_auc": 0.7632,
+      "gini": 0.5264,
+      "pr_auc": 0.2497,
+      "ks": 0.3939,
+      "brier": 0.0676,
+      "calibration_error": 0.0027,
+      "mean_predicted": 0.0806,
+      "actual_default_rate": 0.0807
+    }
+  }
+}

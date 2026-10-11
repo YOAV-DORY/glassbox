@@ -4,7 +4,7 @@ import pytest
 
 from credit_risk.config import MODEL_INPUTS
 from credit_risk.features import add_engineered_features
-from credit_risk.train import train
+from credit_risk.train import train_logreg
 from credit_risk.data import clean
 from tests.conftest import VALID_APPLICANT, make_raw_df
 
@@ -32,7 +32,7 @@ def test_engineered_ratios_and_not_employed_flag() -> None:
 
 
 def test_pipeline_handles_missing_scores_and_rare_categories() -> None:
-    pipeline = train(clean(make_raw_df(n=2000)))
+    pipeline = train_logreg(clean(make_raw_df(n=2000)))
     # "Student" never appears in the synthetic training data, and all scores are missing.
     unusual = {**VALID_APPLICANT, "income_type": "Student", "ext_source_1": None,
                "ext_source_2": None, "ext_source_3": None, "years_employed": None}

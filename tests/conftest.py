@@ -12,8 +12,9 @@ import pytest
 
 from credit_risk.artifacts import save_artifacts
 from credit_risk.config import DAYS_EMPLOYED_SENTINEL
-from credit_risk.data import clean
-from credit_risk.train import build_metadata, train
+from credit_risk.data import clean, split
+from credit_risk.models import fit_lgbm
+from credit_risk.train import build_metadata
 
 
 def make_raw_df(n: int = 1000, seed: int = 0) -> pd.DataFrame:
@@ -79,10 +80,10 @@ VALID_APPLICANT: dict = {
 
 @pytest.fixture(scope="session")
 def trained_artifacts_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """A real pipeline trained on synthetic data and saved like the train script does."""
+    """The served model type (LightGBM), trained on synthetic data and saved like the train script does."""
     out_dir = tmp_path_factory.mktemp("artifacts")
-    df = clean(make_raw_df(n=2000))
-    pipeline = train(df)
+    splits = split(clean(make_raw_df(n=2000)))
+    pipeline = fit_lgbm(splits.train, splits.val)
     metrics = {"roc_auc": 0.5, "pr_auc": 0.08, "actual_default_rate": 0.08}
-    save_artifacts(pipeline, build_metadata("logreg", len(df), metrics), out_dir)
+    save_artifacts(pipeline, build_metadata("lgbm", splits.train, metrics), out_dir)
     return out_dir
