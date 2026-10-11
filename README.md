@@ -6,8 +6,8 @@ working: in a live decision app, and in a 3D view of the model's actual risk sur
 
 ![Glassbox landing page](docs/images/landing.jpg)
 
-> **Status:** work in progress. Data, model, evaluation, API and app are done (milestones M0–M2).
-> Next: SHAP reason codes (M3), a policy and portfolio simulator (M4), and a fairness audit (M5).
+> **Status:** work in progress. Data, model, evaluation, reason codes, API and app are done
+> (milestones M0–M3). Next: a policy and portfolio simulator (M4) and a fairness audit (M5).
 > See [docs/PLAN.md](docs/PLAN.md).
 
 ## The problem
@@ -32,9 +32,12 @@ Glassbox is built around those three points, on the public
 
 - **Model:** LightGBM on 15 application fields plus 5 engineered ratios (payment-to-income,
   loan-to-value, ...). A higher credit score can never raise predicted risk (monotone constraints).
+- **Reason codes:** every prediction comes with the factors that raised and lowered the risk,
+  measured with SHAP. On a decline they are the principal reasons an adverse action notice would list.
 - **Policy:** approve when expected profit is positive: `p < margin / (margin + loss given default)`.
   With placeholder economics (60% loss on default, 10% margin) the cut-off is **14.3%**.
-- **API (FastAPI):** `POST /predict`, `GET /model/info`, `GET /model/surface`. Docs at `/docs`.
+- **API (FastAPI):** `POST /predict` (score, decision, reasons), `GET /model/info`,
+  `GET /model/surface`. Docs at `/docs`.
 - **App (React + TypeScript):** a landing page and a live decision desk. The decision updates as
   you type; three example applicants (low risk, borderline just under the cut-off, high risk) are one click away.
 
@@ -65,7 +68,17 @@ A random model scores ROC-AUC 0.5 and PR-AUC 0.081 (the default rate).
   ([notebook 02](notebooks/02_feature_set_tradeoff.ipynb)). The small set makes the form usable and the
   reasons readable, at no cost in accuracy.
 
-More: [ROC](reports/figures/roc.png), [precision-recall](reports/figures/precision_recall.png),
+### What drives the model (SHAP)
+
+![SHAP beeswarm: one dot per applicant per feature](reports/figures/shap_beeswarm.png)
+
+Each dot is one test applicant; right of zero raises predicted risk, left lowers it; colour is the
+feature's value (grey for text categories). The three credit-bureau scores dominate, and high scores
+(red) always sit on the left: the monotone constraint at work. Loan length is non-linear: both short
+and long loans can raise risk. SHAP contributions are exact for tree models and add up to the model's
+score, which a test checks.
+
+More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_importance.png), [precision-recall](reports/figures/precision_recall.png),
 [all metrics](reports/metrics.json), [exploratory analysis](notebooks/01_eda.ipynb).
 
 ## Design decisions
@@ -79,6 +92,7 @@ More: [ROC](reports/figures/roc.png), [precision-recall](reports/figures/precisi
 | Feature engineering inside the saved pipeline | Training and the API compute features identically. A test caught a real train/serve skew bug: a JSON `null` became a text column that LightGBM rejected. |
 | Gender, age, marital status excluded from the model, kept for the audit | Mirrors US fair-lending rules. EDA found the "not employed" flag is mostly pensioners, i.e. an age proxy, so the audit has to look for proxies. |
 | Model chosen on validation, test set scored once | Keeps the reported numbers honest. |
+| SHAP TreeExplainer for reasons | Exact for trees, additive (contributions sum to the score), ~3 ms per applicant, so it runs live on every request. |
 
 ## Limitations
 
@@ -90,7 +104,9 @@ More: [ROC](reports/figures/roc.png), [precision-recall](reports/figures/precisi
   undocumented, so ratios are relative signals.
 - **Placeholder economics.** 60% loss and 10% margin are assumptions; real values vary per loan.
 - **Opaque inputs.** The three external scores are the strongest features, and their provenance is unknown.
-- **Not built yet:** reason codes (M3) and the fairness audit (M5).
+- **Reason codes explain the model, not the world.** SHAP is not causal, and correlated inputs (the
+  three scores; loan amount and purchase price) can share credit in ways that look arbitrary.
+- **Not built yet:** the policy simulator (M4) and the fairness audit (M5).
 
 ## Run it locally
 
@@ -114,13 +130,14 @@ Needs Python 3.12+, Node 20+, and on macOS `brew install libomp` (for LightGBM).
    ```
    Open http://localhost:5173.
 
-Tests need no data download: `pytest` (24 tests: cleaning and split, features, the monotone
-constraint, metrics, threshold maths, and the API contract, all on synthetic data).
+Tests need no data download: `pytest` (32 tests: cleaning and split, features, the monotone
+constraint, metrics, SHAP additivity and reason codes, threshold maths, and the API contract, all on
+synthetic data).
 
 ## Repository layout
 
 ```
-src/credit_risk/   data.py, features.py, models.py, train.py, evaluate.py, decision.py, whatif.py
+src/credit_risk/   data.py, features.py, models.py, train.py, evaluate.py, explain.py, decision.py, whatif.py
 api/               FastAPI app and request/response schemas
 web/               React + TypeScript app (Vite)
 tests/             pytest suite (synthetic data)
