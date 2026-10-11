@@ -18,6 +18,9 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 
 MODEL_FILE = "model.joblib"
 METADATA_FILE = "metadata.json"
+# Row-level test-set predictions for the portfolio simulator and fairness audit.
+# Derived from Kaggle data, so it stays in artifacts/ (gitignored), never in the repo.
+PORTFOLIO_FILE = "test_predictions.parquet"
 
 # Default lending policy (placeholder assumptions, adjustable in the app from M4).
 # LGD = share of the loan lost when a borrower defaults (cost of a false approval).

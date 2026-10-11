@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from credit_risk.artifacts import save_artifacts
-from credit_risk.config import DAYS_EMPLOYED_SENTINEL
+from credit_risk.artifacts import save_artifacts, save_portfolio
+from credit_risk.config import DAYS_EMPLOYED_SENTINEL, MODEL_INPUTS
 from credit_risk.data import clean, split
 from credit_risk.models import fit_lgbm
 from credit_risk.train import build_metadata
@@ -86,6 +86,14 @@ def trained_artifacts_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     pipeline = fit_lgbm(splits.train, splits.val)
     metrics = {"roc_auc": 0.5, "pr_auc": 0.08, "actual_default_rate": 0.08}
     save_artifacts(pipeline, build_metadata("lgbm", splits.train, metrics), out_dir)
+    test = splits.test
+    save_portfolio(pd.DataFrame({
+        "p_default": pipeline.predict_proba(test[MODEL_INPUTS])[:, 1],
+        "defaulted": test["defaulted"].to_numpy(),
+        "amt_credit": test["amt_credit"].to_numpy(),
+        "gender": test["gender"].to_numpy(),
+        "age_years": test["age_years"].to_numpy(),
+    }), out_dir)
     return out_dir
 
 

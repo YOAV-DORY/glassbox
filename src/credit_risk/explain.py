@@ -149,8 +149,10 @@ def plot_importance(explainer: Explainer, applicants: pd.DataFrame, out_dir: Pat
     for kind, filename in (("bar", "shap_importance.png"), ("dot", "shap_beeswarm.png")):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)  # all-blank category columns, see above
+            # rng: SHAP jitters overlapping dots randomly; a fixed seed keeps the figure reproducible.
             shap.summary_plot(values.to_numpy(), numeric, feature_names=names, plot_type=kind,
-                              max_display=12, show=False, color="#2443d6" if kind == "bar" else None)
+                              max_display=12, show=False, color="#2443d6" if kind == "bar" else None,
+                              rng=np.random.default_rng(0))
         fig = plt.gcf()
         fig.axes[0].set_xlabel("Mean |SHAP| (log-odds)" if kind == "bar" else "SHAP contribution (log-odds)")
         fig.tight_layout()

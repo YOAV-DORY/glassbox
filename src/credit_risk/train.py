@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
-from credit_risk.artifacts import artifacts_dir, save_artifacts
+from credit_risk.artifacts import artifacts_dir, save_artifacts, save_portfolio
 from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS, PROJECT_ROOT, REPORTS_DIR, TARGET
 from credit_risk.data import load_splits
 from credit_risk.evaluate import basic_metrics, plot_evaluation
@@ -128,6 +128,18 @@ def main() -> None:
         ]
         figures += plot_importance(explainer, sample, REPORTS_DIR / "figures")
     save_artifacts(models[best], metadata, artifacts_dir())
+    # What the chosen model predicted for each test applicant, with the real outcome.
+    # Feeds the portfolio simulator; gender and age are only for the fairness audit.
+    save_portfolio(
+        pd.DataFrame({
+            "p_default": test_predictions[best],
+            "defaulted": y_test,
+            "amt_credit": splits.test["amt_credit"].to_numpy(),
+            "gender": splits.test["gender"].to_numpy(),
+            "age_years": splits.test["age_years"].to_numpy(),
+        }),
+        artifacts_dir(),
+    )
     figures.append(plot_risk_map(
         models[best], metadata["reference_applicant"], cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN),
         REPORTS_DIR / "figures" / "risk_map.png",
