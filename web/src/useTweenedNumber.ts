@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+import { prefersReducedMotion } from "./hooks";
 
 /** Animates a displayed number from its current value to `target` (ease-out). */
 export function useTweenedNumber(target: number, durationMs = 550): number {
