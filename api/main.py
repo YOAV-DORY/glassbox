@@ -27,7 +27,7 @@ from api.schemas import (
     Reason,
     RiskSurface,
 )
-from credit_risk.artifacts import artifacts_dir, load_artifacts, load_portfolio
+from credit_risk.artifacts import artifacts_dir, load_artifacts, load_cohort
 from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS
 from credit_risk.decision import cost_based_threshold, decide, expected_profit, portfolio_outcome, profit_curve
 from credit_risk.explain import Explainer
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # SHAP's TreeExplainer only works for tree models; a logistic regression gets no reasons.
     is_tree = app.state.metadata["model_type"] == "lgbm"
     app.state.explainer = Explainer(app.state.pipeline) if is_tree else None
-    app.state.portfolio = load_portfolio(artifacts_dir())  # test-set predictions + outcomes
+    app.state.portfolio = load_cohort(artifacts_dir())  # test-set predictions + outcomes
     # The surface never changes for a given model, so compute it once and reuse it.
     x, y, z = risk_surface(app.state.pipeline, app.state.metadata["reference_applicant"], *SURFACE_FEATURES)
     app.state.surface = RiskSurface(

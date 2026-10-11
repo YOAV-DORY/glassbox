@@ -267,19 +267,6 @@
   color: var(--ink-3);
 }
 
-.step-status {
-  align-self: flex-start;
-  margin-top: 24px;
-  padding: 6px 12px;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-}
-
 /* ---------- Numbers ---------- */
 
 .numbers {

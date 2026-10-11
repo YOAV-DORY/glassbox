@@ -1,0 +1,79 @@
+{
+  "threshold": 0.14285714285714288,
+  "gender": [
+    {
+      "group": "F",
+      "n": 40529,
+      "default_rate": 0.07019664931283773,
+      "default_rate_se": 0.001269026819659257,
+      "mean_predicted": 0.0753491522172644,
+      "approval_rate": 0.872856473142688,
+      "default_rate_approved": 0.04830958842152872,
+      "repayers_declined": 0.10659696422885044,
+      "approval_ratio": 1.0
+    },
+    {
+      "group": "M",
+      "n": 20972,
+      "default_rate": 0.10108716383749762,
+      "default_rate_se": 0.0020815501203039137,
+      "mean_predicted": 0.0924242354243305,
+      "approval_rate": 0.8135132557695975,
+      "default_rate_approved": 0.06623292890217455,
+      "repayers_declined": 0.15494377254402716,
+      "approval_ratio": 0.9320126284228295
+    }
+  ],
+  "age_band": [
+    {
+      "group": "<30",
+      "n": 8972,
+      "default_rate": 0.11301827909050378,
+      "default_rate_se": 0.003342620309091954,
+      "mean_predicted": 0.12921154169774238,
+      "approval_rate": 0.6911502452073116,
+      "default_rate_approved": 0.062248024512175454,
+      "repayers_declined": 0.26928876602161345,
+      "approval_ratio": 0.7223205809803412
+    },
+    {
+      "group": "30-44",
+      "n": 24859,
+      "default_rate": 0.09095297477774648,
+      "default_rate_se": 0.0018237268907893378,
+      "mean_predicted": 0.08535794292188312,
+      "approval_rate": 0.8383281708837845,
+      "default_rate_approved": 0.0604126679462572,
+      "repayers_declined": 0.13350739003451634,
+      "approval_ratio": 0.876136116052927
+    },
+    {
+      "group": "45-59",
+      "n": 20719,
+      "default_rate": 0.0653506443361166,
+      "default_rate_se": 0.0017169786591732365,
+      "mean_predicted": 0.06578803568367188,
+      "approval_rate": 0.9047251315217916,
+      "default_rate_approved": 0.04891971192317952,
+      "repayers_declined": 0.07936999741802221,
+      "approval_ratio": 0.9455275277118904
+    },
+    {
+      "group": "60+",
+      "n": 6952,
+      "default_rate": 0.04833141542002301,
+      "default_rate_se": 0.0025721882014686404,
+      "mean_predicted": 0.050052482845666546,
+      "approval_rate": 0.9568469505178366,
+      "default_rate_approved": 0.04164161154539988,
+      "repayers_declined": 0.036426844014510275,
+      "approval_ratio": 1.0
+    }
+  ],
+  "proxy": {
+    "share_60plus_not_employed": 0.8338607594936709,
+    "share_under_45_not_employed": 0.007892169903343087,
+    "share_not_employed_who_are_60plus": 0.5259958261500771
+  },
+  "cohort": "validation"
+}

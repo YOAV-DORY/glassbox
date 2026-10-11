@@ -6,8 +6,8 @@ working: in a live decision app, and in a 3D view of the model's actual risk sur
 
 ![Glassbox landing page](docs/images/landing.jpg)
 
-> **Status:** work in progress. Data, model, evaluation, reason codes, the policy simulator, API and
-> app are done (milestones M0–M4). Next: a fairness audit (M5).
+> **Status:** work in progress. Data, model, evaluation, reason codes, the policy simulator, the
+> fairness audit, API and app are done (milestones M0–M5).
 > See [docs/PLAN.md](docs/PLAN.md).
 
 ## The problem
@@ -90,6 +90,43 @@ Replaying the default policy (60% loss, 10% margin) on the 61,503 test applicant
 - A 50% cut-off barely differs from approving everyone: with 8% defaults, almost nobody scores above 50%.
 - Profit is in the dataset's (unnamed) currency, under the simplifications listed in the app.
 
+### Fairness audit
+
+Gender and age are not model inputs; they were kept aside only for this audit. Results at the default
+14.3% cut-off on the **validation** cohort (61,502 applicants; the test set is reserved for the headline
+metrics). Full numbers: [reports/fairness.json](reports/fairness.json).
+
+| Group | Applicants | Actual default rate | Model's average prediction | Approved | Approval ratio¹ | Repayers declined² |
+|---|---|---|---|---|---|---|
+| Women | 40,529 | 7.0% | 7.5% | 87.3% | 1.00 | 10.7% |
+| Men | 20,972 | 10.1% | 9.2% | 81.4% | 0.93 | 15.5% |
+| Under 30 | 8,972 | 11.3% | 12.9% | 69.1% | **0.72** | 26.9% |
+| 30–44 | 24,859 | 9.1% | 8.5% | 83.8% | 0.88 | 13.4% |
+| 45–59 | 20,719 | 6.5% | 6.6% | 90.5% | 0.95 | 7.9% |
+| 60+ | 6,952 | 4.8% | 5.0% | 95.7% | 1.00 | 3.6% |
+
+¹ Approval rate relative to the most-approved group in the same table; below 0.8 is the common
+"four-fifths" warning sign (a rule of thumb, not a legal test). ² Share of applicants who did repay but
+would have been declined.
+
+What this shows:
+- **Most of the approval gaps follow different default rates.** Men and younger applicants default more
+  often, so a single cut-off approves them less. The gender ratio (0.93) is above the four-fifths line.
+- **Under-30s fall below it (0.72), and not only because of their base rate.** The model overstates their
+  risk: it predicts 12.9% on average against 11.3% observed (standard error ≈ 0.3 points). Over a quarter
+  of under-30s who repaid would have been declined, against 4% of over-60s.
+- **Calibration differs by gender too:** the model overstates women's risk (7.5% vs 7.0%) and understates
+  men's (9.2% vs 10.1%), each about four standard errors. With gender excluded, the model cannot tell the
+  groups apart, so it lands between them.
+- **Removing age didn't remove age.** The "not employed" flag marks pensioners: 83% of over-60s carry it,
+  against 0.8% of under-45s. The model gives that flag the least weight of all 20 features (SHAP), but
+  years in current job, the 5th most important feature, also tracks age.
+
+What it doesn't show: whether any gap is legally justified (this is not a legal analysis), how the
+model treats applicants the lender rejected in the past (their outcomes don't exist), or anything about
+race or ethnicity (not in the data). Mitigations such as per-group calibration checks, reweighting or
+constrained training are discussed, not built.
+
 ### What drives the model (SHAP)
 
 ![SHAP beeswarm: one dot per applicant per feature](reports/figures/shap_beeswarm.png)
@@ -132,7 +169,8 @@ More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_i
 - **Opaque inputs.** The three external scores are the strongest features, and their provenance is unknown.
 - **Reason codes explain the model, not the world.** SHAP is not causal, and correlated inputs (the
   three scores; loan amount and purchase price) can share credit in ways that look arbitrary.
-- **Not built yet:** the fairness audit (M5).
+- **Fairness audit is descriptive.** It measures gaps at one cut-off on past approved loans; it does not
+  fix them, and it is not a legal disparate-impact analysis.
 
 ## Run it locally
 

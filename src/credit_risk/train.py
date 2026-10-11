@@ -18,11 +18,20 @@ import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
-from credit_risk.artifacts import artifacts_dir, save_artifacts, save_portfolio
-from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS, PROJECT_ROOT, REPORTS_DIR, TARGET
+from credit_risk.artifacts import artifacts_dir, save_artifacts, save_cohort
+from credit_risk.config import (
+    DEFAULT_LGD,
+    DEFAULT_MARGIN,
+    MODEL_INPUTS,
+    PROJECT_ROOT,
+    REPORTS_DIR,
+    TARGET,
+    VALIDATION_COHORT_FILE,
+)
 from credit_risk.data import load_splits
 from credit_risk.evaluate import basic_metrics, plot_evaluation
 from credit_risk.explain import LABELS, Explainer, global_importance, plot_importance
+from credit_risk.fairness import audit
 from credit_risk.decision import cost_based_threshold
 from credit_risk.models import build_logreg_pipeline, fit_lgbm
 from credit_risk.whatif import plot_risk_map
@@ -40,6 +49,19 @@ def train_logreg(train_df: pd.DataFrame) -> Pipeline:
 def predict_default_proba(pipeline: Pipeline, df: pd.DataFrame) -> np.ndarray:
     """Column 1 of predict_proba is P(defaulted = 1)."""
     return pipeline.predict_proba(df[MODEL_INPUTS])[:, 1]
+
+
+def cohort_frame(pipeline: Pipeline, df: pd.DataFrame) -> pd.DataFrame:
+    """One row per applicant: the model's prediction, what really happened, the loan amount,
+    and the audit-only columns (gender, age) plus the 'not employed' flag for the proxy check."""
+    return pd.DataFrame({
+        "p_default": predict_default_proba(pipeline, df),
+        "defaulted": df[TARGET].to_numpy(),
+        "amt_credit": df["amt_credit"].to_numpy(),
+        "gender": df["gender"].to_numpy(),
+        "age_years": df["age_years"].to_numpy(),
+        "not_employed": df["years_employed"].isna().to_numpy(),
+    })
 
 
 def reference_applicant(train_df: pd.DataFrame) -> dict[str, Any]:
@@ -128,18 +150,15 @@ def main() -> None:
         ]
         figures += plot_importance(explainer, sample, REPORTS_DIR / "figures")
     save_artifacts(models[best], metadata, artifacts_dir())
-    # What the chosen model predicted for each test applicant, with the real outcome.
-    # Feeds the portfolio simulator; gender and age are only for the fairness audit.
-    save_portfolio(
-        pd.DataFrame({
-            "p_default": test_predictions[best],
-            "defaulted": y_test,
-            "amt_credit": splits.test["amt_credit"].to_numpy(),
-            "gender": splits.test["gender"].to_numpy(),
-            "age_years": splits.test["age_years"].to_numpy(),
-        }),
-        artifacts_dir(),
-    )
+    # What the chosen model predicted for each applicant, with the real outcome.
+    save_cohort(cohort_frame(models[best], splits.test), artifacts_dir())
+    # Policy and fairness analysis run on validation: users explore it interactively, and
+    # nothing interactive may touch the test set, which is kept for the headline metrics.
+    validation_cohort = cohort_frame(models[best], splits.val)
+    save_cohort(validation_cohort, artifacts_dir(), VALIDATION_COHORT_FILE)
+    fairness = audit(validation_cohort, cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN))
+    fairness["cohort"] = "validation"
+    (REPORTS_DIR / "fairness.json").write_text(json.dumps(fairness, indent=2, default=float))
     figures.append(plot_risk_map(
         models[best], metadata["reference_applicant"], cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN),
         REPORTS_DIR / "figures" / "risk_map.png",

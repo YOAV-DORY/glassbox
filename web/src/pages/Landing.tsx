@@ -151,8 +151,8 @@ const STEPS = [
   },
   {
     title: "Check fairness",
-    body: "Gender and age stay out of the model, but other inputs can stand in for them. Approval and error rates get compared across groups.",
-    status: "Planned",
+    body: "Gender and age stay out of the model, but other inputs can stand in for them. Approval rates, default rates and calibration are compared across groups.",
+    note: "The audit flags under-30s: approved far less often, partly because the model overstates their risk.",
   },
 ];
 
@@ -219,7 +219,6 @@ function HowItWorks({ info }: { info: ModelInfo | null }) {
               </Link>
             )}
             {step.note && <p className="step-note">{step.note}</p>}
-            {step.status && <span className="step-status">{step.status}</span>}
           </li>
         ))}
       </ol>
