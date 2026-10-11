@@ -16,6 +16,15 @@ TRAIN_FILE_CANDIDATES = [
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
+MODEL_FILE = "model.joblib"
+METADATA_FILE = "metadata.json"
+
+# Default lending policy (placeholder assumptions, adjustable in the app from M4).
+# LGD = share of the loan lost when a borrower defaults (cost of a false approval).
+# Margin = profit on a repaid loan as a share of its amount (cost of a false rejection).
+DEFAULT_LGD = 0.60
+DEFAULT_MARGIN = 0.10
+
 RANDOM_SEED = 42
 VAL_SIZE = 0.2   # fractions of the full dataset: 60 / 20 / 20
 TEST_SIZE = 0.2

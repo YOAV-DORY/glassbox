@@ -4,11 +4,16 @@ Tests use small synthetic data shaped like the Kaggle CSV, so they run on a fres
 clone without downloading anything.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 
+from credit_risk.artifacts import save_artifacts
 from credit_risk.config import DAYS_EMPLOYED_SENTINEL
+from credit_risk.data import clean
+from credit_risk.train import build_metadata, train
 
 
 def make_raw_df(n: int = 1000, seed: int = 0) -> pd.DataFrame:
@@ -50,3 +55,33 @@ def make_raw_df(n: int = 1000, seed: int = 0) -> pd.DataFrame:
 @pytest.fixture
 def raw_df() -> pd.DataFrame:
     return make_raw_df()
+
+
+# One applicant as the API receives it (and as the pipeline expects it after data.clean).
+VALID_APPLICANT: dict = {
+    "amt_credit": 450_000,
+    "amt_annuity": 24_000,
+    "amt_goods_price": 405_000,
+    "contract_type": "Cash loans",
+    "amt_income_total": 180_000,
+    "income_type": "Working",
+    "education_type": "Higher education",
+    "years_employed": 4.5,
+    "ext_source_1": None,
+    "ext_source_2": 0.56,
+    "ext_source_3": 0.41,
+    "own_car": False,
+    "own_realty": True,
+    "cnt_children": 1,
+    "region_rating": 2,
+}
+
+
+@pytest.fixture(scope="session")
+def trained_artifacts_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A real pipeline trained on synthetic data and saved like the train script does."""
+    out_dir = tmp_path_factory.mktemp("artifacts")
+    df = clean(make_raw_df(n=2000))
+    pipeline = train(df)
+    save_artifacts(pipeline, build_metadata("logreg", len(df), {"roc_auc": 0.5}), out_dir)
+    return out_dir
