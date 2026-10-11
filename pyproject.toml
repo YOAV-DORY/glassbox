@@ -28,7 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest==9.1.1",
-    "httpx==0.28.1",  # required by FastAPI's TestClient
+    "httpx2==2.13.1",  # FastAPI's TestClient; Starlette's recommended successor to httpx
     "jupyterlab==4.6.4",
 ]
 
