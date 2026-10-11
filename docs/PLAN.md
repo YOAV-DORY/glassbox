@@ -11,7 +11,7 @@ The approved Phase 1 plan, kept in the repo as a record of the design decisions.
 | Frontend language | TypeScript |
 | Python environment | `venv` + `pyproject.toml` with exact pins |
 | Default policy assumptions | Loss given default 60%, net margin 10% (placeholders, labeled as such) |
-| Repo name | `glassbox`, private for now |
+| Repo | `glassbox`, public on GitHub |
 
 ## 1. Dataset
 
