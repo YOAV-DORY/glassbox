@@ -62,8 +62,20 @@ export interface ModelInfo {
   model_version: string;
   model_type: string;
   trained_at: string;
+  train_rows: number;
   validation_roc_auc: number;
   validation_pr_auc: number;
+  test_roc_auc: number | null; // held-out test set, scored once after model selection
+  test_pr_auc: number | null;
   average_default_rate: number;
   policy: { lgd: number; margin: number; threshold: number };
+}
+
+export interface RiskSurface {
+  x_feature: string;
+  y_feature: string;
+  x: number[];
+  y: number[];
+  z: number[][]; // z[i][j] = probability of default at y[i], x[j]
+  threshold: number;
 }

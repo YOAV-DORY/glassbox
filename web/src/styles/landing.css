@@ -1,0 +1,516 @@
+/* Landing page: kinetic type, wireframe 3D, scroll-driven sections. */
+
+.landing > section {
+  padding-inline: var(--gutter);
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  align-items: center;
+  gap: 40px;
+  min-height: calc(100svh - 70px);
+  padding-block: 64px 80px;
+}
+
+.hero-title {
+  margin: 28px 0 32px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(60px, 8.6vw, 150px);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.hero-line {
+  display: block;
+}
+
+.word-decision,
+.word-approve,
+.word-decline {
+  font-style: italic;
+}
+
+.word-decision {
+  color: var(--cobalt);
+}
+
+.word-approve {
+  color: var(--approve);
+}
+
+.word-decline {
+  color: var(--decline);
+}
+
+.hero-lede {
+  max-width: 46ch;
+  margin: 0 0 40px;
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.hero-visual {
+  position: relative;
+  margin: 0;
+  height: min(72vh, 660px);
+}
+
+.wire-cube {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-visual figcaption {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.hero-visual figcaption span,
+.landscape .eyebrow {
+  font-family: var(--mono);
+  color: var(--cobalt);
+  margin-right: 6px;
+}
+
+/* ---------- Scroll-linked marquee ---------- */
+
+.marquees {
+  padding: 40px 0;
+  border-block: 1px solid var(--rule);
+}
+
+.marquee {
+  overflow: hidden;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  margin-left: -40%;
+  will-change: transform;
+}
+
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding-right: 0.3em;
+  font-family: var(--serif);
+  font-size: clamp(64px, 11vw, 176px);
+  line-height: 1.02;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.2px var(--ink);
+}
+
+.marquee-item.is-filled {
+  color: var(--ink);
+  -webkit-text-stroke: 0;
+  font-style: italic;
+}
+
+.marquee-dot {
+  display: inline-block;
+  width: 0.13em;
+  height: 0.13em;
+  border-radius: 50%;
+  background: var(--cobalt);
+}
+
+/* ---------- How it works: sticky number, scrolling steps ---------- */
+
+.how {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 96px;
+  padding-block: 160px 80px;
+}
+
+.how-sticky {
+  position: sticky;
+  top: 22vh;
+  align-self: start;
+}
+
+.how-number {
+  margin: 24px 0 8px;
+  font-family: var(--serif);
+  font-size: clamp(140px, 19vw, 300px);
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  color: var(--cobalt);
+}
+
+.how-current {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(28px, 2.6vw, 40px);
+  font-style: italic;
+  animation: rise 0.6s var(--ease) backwards;
+}
+
+.how-progress {
+  display: flex;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.how-progress i {
+  width: 36px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--rule);
+  transition: background 0.5s var(--ease);
+}
+
+.how-progress i.is-on {
+  background: var(--ink);
+}
+
+.how-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72vh;
+  padding: 0 0 0 40px;
+  border-left: 1px solid var(--rule);
+  opacity: 0.28;
+  transform: translateX(12px);
+  transition:
+    opacity 0.7s var(--ease),
+    transform 0.7s var(--ease),
+    border-color 0.7s;
+}
+
+.step.is-active {
+  opacity: 1;
+  transform: none;
+  border-left-color: var(--ink);
+}
+
+.step-index {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--cobalt);
+}
+
+.step-title {
+  margin: 12px 0 18px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(40px, 4.2vw, 64px);
+  line-height: 1;
+}
+
+.step-body {
+  max-width: 44ch;
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.step-formula {
+  align-self: flex-start;
+  margin: 28px 0 0;
+  padding: 16px 20px;
+  border: 1px dashed var(--ink-3);
+  border-radius: 14px;
+  font-family: var(--mono);
+  font-size: 15px;
+}
+
+.step-formula var {
+  font-family: var(--serif);
+  font-size: 20px;
+}
+
+.step-formula strong {
+  color: var(--cobalt);
+  font-weight: 500;
+}
+
+.step-note {
+  margin: 20px 0 0;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.step-status {
+  align-self: flex-start;
+  margin-top: 24px;
+  padding: 6px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ---------- Numbers ---------- */
+
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 40px;
+  padding-block: 120px;
+}
+
+.number {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 24px;
+  border-top: 1px solid var(--ink);
+}
+
+.count-up {
+  font-family: var(--serif);
+  font-size: clamp(48px, 5.4vw, 88px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.number-label {
+  max-width: 22ch;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+/* ---------- Risk landscape ---------- */
+
+.landscape {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 72px;
+  padding-block: 140px;
+}
+
+.section-heading {
+  margin: 20px 0 24px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(44px, 5vw, 76px);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+.heading-accent {
+  font-style: italic;
+  color: var(--cobalt);
+}
+
+.section-lede {
+  max-width: 48ch;
+  margin: 0 0 28px;
+  font-size: 18px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.landscape-notes {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.landscape-notes li {
+  padding-left: 22px;
+  position: relative;
+}
+
+.landscape-notes li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 10px;
+  height: 1.5px;
+  background: var(--cobalt);
+}
+
+.landscape-notes strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.landscape-stage {
+  position: relative;
+  height: clamp(420px, 64vh, 640px);
+  border: 1px solid var(--rule);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Registration marks in the corners, like a printed figure plate. */
+.landscape-stage::before,
+.landscape-stage::after {
+  content: "+";
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.landscape-stage::before {
+  top: 14px;
+  left: 18px;
+}
+
+.landscape-stage::after {
+  bottom: 14px;
+  right: 18px;
+}
+
+.landscape-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y; /* vertical swipes still scroll the page on phones */
+}
+
+.landscape-canvas:active {
+  cursor: grabbing;
+}
+
+.landscape-empty {
+  display: grid;
+  place-content: center;
+  height: 100%;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* ---------- Finale ---------- */
+
+.finale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-block: 160px 180px;
+}
+
+.finale-title {
+  margin: 20px 0 28px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(88px, 15vw, 240px);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.finale .section-lede {
+  margin-bottom: 44px;
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    padding-block: 40px 56px;
+    gap: 8px;
+  }
+
+  .hero-visual {
+    order: -1;
+    height: 300px;
+    margin: 0 -10px;
+  }
+
+  .hero-visual figcaption {
+    display: none;
+  }
+
+  .hero-title {
+    margin-top: 16px;
+  }
+
+  .hero-lede {
+    font-size: 17px;
+  }
+
+  .how {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding-block: 96px 40px;
+  }
+
+  .how-sticky {
+    position: relative;
+    top: 0;
+  }
+
+  .how-number,
+  .how-current,
+  .how-progress {
+    display: none;
+  }
+
+  .step {
+    min-height: 0;
+    padding: 36px 0 36px 24px;
+    opacity: 1;
+    transform: none;
+  }
+
+  .step-body {
+    font-size: 17px;
+  }
+
+  .numbers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px 20px;
+    padding-block: 72px;
+  }
+
+  .landscape {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+    padding-block: 96px;
+  }
+
+  .landscape-stage {
+    height: 380px;
+  }
+
+  .finale {
+    padding-block: 110px 120px;
+  }
+}

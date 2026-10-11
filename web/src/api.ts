@@ -1,4 +1,4 @@
-import type { Applicant, ApplicantDraft, ModelInfo, PredictResponse } from "./types";
+import type { Applicant, ApplicantDraft, ModelInfo, PredictResponse, RiskSurface } from "./types";
 
 // Vite forwards /api/* to FastAPI (see vite.config.ts).
 const BASE = "/api";
@@ -23,6 +23,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function fetchModelInfo(): Promise<ModelInfo> {
   return request<ModelInfo>("/model/info");
+}
+
+export function fetchRiskSurface(): Promise<RiskSurface> {
+  return request<RiskSurface>("/model/surface");
 }
 
 export function predict(applicant: Applicant, signal: AbortSignal): Promise<PredictResponse> {

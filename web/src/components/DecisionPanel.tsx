@@ -4,7 +4,7 @@ import type { PredictionState } from "../usePrediction";
 import { useTweenedNumber } from "../useTweenedNumber";
 import { RiskScale } from "./RiskScale";
 
-const MODEL_NAMES: Record<string, string> = { logreg: "Logistic regression" };
+const MODEL_NAMES: Record<string, string> = { logreg: "Logistic regression", lgbm: "LightGBM" };
 
 export function DecisionPanel(props: { prediction: PredictionState; info: ModelInfo | null }) {
   const { result, loading, error } = props.prediction;
@@ -70,7 +70,7 @@ export function DecisionPanel(props: { prediction: PredictionState; info: ModelI
       {info && (
         <footer className="panel-foot">
           <span>{MODEL_NAMES[info.model_type] ?? info.model_type}</span>
-          <span>ROC-AUC {info.validation_roc_auc.toFixed(3)}</span>
+          <span>Test ROC-AUC {(info.test_roc_auc ?? info.validation_roc_auc).toFixed(3)}</span>
           <span>Trained {info.trained_at.slice(0, 10)}</span>
         </footer>
       )}

@@ -37,7 +37,7 @@ export function ApplicantForm(props: {
 
   return (
     <form className="form" onSubmit={(event) => event.preventDefault()}>
-      <div className="examples reveal" style={stagger(2)}>
+      <div className="examples load-in" style={stagger(2)}>
         <span className="examples-label">Start from an example</span>
         <div className="examples-row">
           {EXAMPLES.map((example, i) => (
@@ -55,15 +55,15 @@ export function ApplicantForm(props: {
         </div>
       </div>
 
-      <div className="reveal" style={stagger(3)}>
-        <Section index="01" title="Loan">
-          <Field label="Loan amount" htmlFor="amt_credit">
+      <div className="load-in" style={stagger(3)}>
+        <Section index="01" title="The loan">
+          <Field label="Loan amount" htmlFor="amt_credit" hint="How much they want to borrow">
             <AmountInput id="amt_credit" value={draft.amt_credit} onChange={(v) => setField("amt_credit", v)} />
           </Field>
-          <Field label="Annuity" htmlFor="amt_annuity" hint="The regular repayment">
+          <Field label="Regular payment" htmlFor="amt_annuity" hint="The annuity: what they repay each period">
             <AmountInput id="amt_annuity" value={draft.amt_annuity} onChange={(v) => setField("amt_annuity", v)} />
           </Field>
-          <Field label="Goods price" htmlFor="amt_goods_price" hint="What the loan pays for · optional">
+          <Field label="Price of the purchase" htmlFor="amt_goods_price" hint="Optional. Leave empty for a plain cash loan">
             <AmountInput
               id="amt_goods_price"
               value={draft.amt_goods_price}
@@ -71,7 +71,7 @@ export function ApplicantForm(props: {
               onChange={(v) => setField("amt_goods_price", v)}
             />
           </Field>
-          <Field label="Contract">
+          <Field label="Loan type">
             <Segmented
               name="contract_type"
               value={draft.contract_type}
@@ -85,16 +85,16 @@ export function ApplicantForm(props: {
         </Section>
       </div>
 
-      <div className="reveal" style={stagger(4)}>
+      <div className="load-in" style={stagger(4)}>
         <Section index="02" title="Income & work">
-          <Field label="Income" htmlFor="amt_income_total">
+          <Field label="Total income" htmlFor="amt_income_total" hint="Same currency and period as the payment">
             <AmountInput
               id="amt_income_total"
               value={draft.amt_income_total}
               onChange={(v) => setField("amt_income_total", v)}
             />
           </Field>
-          <Field label="Income type" htmlFor="income_type">
+          <Field label="Source of income" htmlFor="income_type">
             <Select
               id="income_type"
               options={INCOME_TYPES}
@@ -110,7 +110,7 @@ export function ApplicantForm(props: {
               onChange={(v) => setField("education_type", v)}
             />
           </Field>
-          <Field label="Years employed" htmlFor="years_employed" wide>
+          <Field label="Years in current job" htmlFor="years_employed" wide>
             <NullableSlider
               id="years_employed"
               value={draft.years_employed}
@@ -125,14 +125,14 @@ export function ApplicantForm(props: {
         </Section>
       </div>
 
-      <div className="reveal" style={stagger(5)}>
+      <div className="load-in" style={stagger(5)}>
         <Section
           index="03"
-          title="Credit scores"
-          note="Scores from external credit bureaus, 0 = worst, 1 = best. Many applicants have no score."
+          title="Credit history"
+          note="Scores from external credit bureaus, from 0 (worst) to 1 (best). Many people have no score yet: tick “No score”."
         >
           {(["ext_source_1", "ext_source_2", "ext_source_3"] as const).map((key, i) => (
-            <Field key={key} label={`External score ${i + 1}`} htmlFor={key} wide>
+            <Field key={key} label={`Bureau score ${i + 1}`} htmlFor={key} wide>
               <NullableSlider
                 id={key}
                 value={draft[key]}
@@ -148,7 +148,7 @@ export function ApplicantForm(props: {
         </Section>
       </div>
 
-      <div className="reveal" style={stagger(6)}>
+      <div className="load-in" style={stagger(6)}>
         <Section index="04" title="Household">
           <Field label="Owns a car">
             <Segmented name="own_car" options={YES_NO} value={draft.own_car} onChange={(v) => setField("own_car", v)} />
@@ -170,7 +170,7 @@ export function ApplicantForm(props: {
               max={20}
             />
           </Field>
-          <Field label="Region rating" hint="1 = best-rated region">
+          <Field label="Region rating" hint="How the lender rates their region: 1 is best">
             <Segmented
               name="region_rating"
               value={draft.region_rating}
@@ -203,7 +203,7 @@ function DerivedRatios({ draft }: { draft: ApplicantDraft }) {
     { label: "Loan to value", value: ratio(amt_credit, amt_goods_price), format: formatPercent },
   ];
   return (
-    <div className="derived reveal" style={stagger(7)}>
+    <div className="derived load-in" style={stagger(7)}>
       <span className="derived-label">What the model also sees</span>
       <dl className="derived-list">
         {items.map((item) => (
