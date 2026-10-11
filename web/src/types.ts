@@ -1,0 +1,69 @@
+// Mirrors api/schemas.py. If the API changes, update this file to match.
+
+export const CONTRACT_TYPES = ["Cash loans", "Revolving loans"] as const;
+export const INCOME_TYPES = [
+  "Working",
+  "Commercial associate",
+  "State servant",
+  "Pensioner",
+  "Unemployed",
+  "Student",
+  "Businessman",
+  "Maternity leave",
+] as const;
+export const EDUCATION_TYPES = [
+  "Lower secondary",
+  "Secondary / secondary special",
+  "Incomplete higher",
+  "Higher education",
+  "Academic degree",
+] as const;
+
+// `typeof LIST[number]` turns each list above into a union type, e.g.
+// ContractType = "Cash loans" | "Revolving loans". One source for options and types.
+export type ContractType = (typeof CONTRACT_TYPES)[number];
+export type IncomeType = (typeof INCOME_TYPES)[number];
+export type EducationType = (typeof EDUCATION_TYPES)[number];
+
+export interface Applicant {
+  amt_credit: number;
+  amt_annuity: number;
+  amt_goods_price: number | null;
+  contract_type: ContractType;
+  amt_income_total: number;
+  income_type: IncomeType;
+  education_type: EducationType;
+  years_employed: number | null; // null = not employed
+  ext_source_1: number | null; // null = no score available
+  ext_source_2: number | null;
+  ext_source_3: number | null;
+  own_car: boolean;
+  own_realty: boolean;
+  cnt_children: number;
+  region_rating: 1 | 2 | 3;
+}
+
+// While the user is typing, a required amount can be temporarily empty.
+// The form edits a draft; only a validated draft becomes an Applicant.
+export type ApplicantDraft = Omit<Applicant, "amt_credit" | "amt_annuity" | "amt_income_total"> & {
+  amt_credit: number | null;
+  amt_annuity: number | null;
+  amt_income_total: number | null;
+};
+
+export interface PredictResponse {
+  probability_of_default: number;
+  decision: "approve" | "decline";
+  threshold: number;
+  model_version: string;
+}
+
+export interface ModelInfo {
+  model_version: string;
+  model_type: string;
+  trained_at: string;
+  validation_roc_auc: number;
+  validation_pr_auc: number;
+  average_default_rate: number;
+  policy: { lgd: number; margin: number; threshold: number };
+}
