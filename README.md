@@ -4,9 +4,10 @@
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**A credit-risk model you can see inside.** Glassbox predicts the probability that a loan applicant
-defaults, turns it into an approve-or-decline decision with an explicit lending policy, and shows its
-working: in a live decision app, and in a 3D view of the model's actual risk surface.
+**A credit-risk model you can see inside.** A student portfolio project: Glassbox predicts the
+probability that a loan applicant defaults, turns it into an approve-or-decline decision with an
+explicit lending policy, explains each decision, and audits the outcome across groups. It is a learning
+project on public data, not a lending product, and the sections below say where its evidence stops.
 
 ![Glassbox landing page](docs/images/landing.jpg)
 
@@ -14,9 +15,12 @@ working: in a live decision app, and in a 3D view of the model's actual risk sur
 
 ![Glassbox demo](docs/images/demo.gif)
 
-> **Status:** work in progress. Data, model, evaluation, reason codes, the policy simulator, the
-> fairness audit, API and app are done (milestones M0–M5).
-> See [docs/PLAN.md](docs/PLAN.md).
+> **Status**
+> - **Done:** data pipeline, baseline and LightGBM models with test-set confidence intervals, decile
+>   calibration, SHAP reason codes, cost-based policy and portfolio simulator, fairness audit by gender
+>   and age, API, web app, synthetic-data demo (script and Docker), CI.
+> - **Not done:** out-of-time validation (the data has no dates), reject inference, any fairness
+>   mitigation, monitoring, a deployed instance. See [docs/PLAN.md](docs/PLAN.md) for the original plan.
 
 ## The problem
 
@@ -97,31 +101,47 @@ More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_i
 | No accuracy metric | Approving everyone is 92% "accurate" and catches no defaults. |
 | No class weights or resampling | They distort probabilities; imbalance is handled by the cut-off instead. |
 | Early stopping on log loss, not AUC | Log loss rewards honest probabilities, not just a good ranking. |
-| Monotone constraints on credit scores | Explanations stay intuitive; it's what model-risk reviewers expect. |
+| Monotone constraints on credit scores | Explanations stay intuitive: a better score never raises risk (tested). Their accuracy cost was not measured separately. |
 | Feature engineering inside the saved pipeline | Training and the API compute features identically. A test caught a real train/serve skew bug: a JSON `null` became a text column that LightGBM rejected. |
 | Gender, age, marital status excluded from the model, kept for the audit | Mirrors US fair-lending rules. EDA found the "not employed" flag is mostly pensioners, i.e. an age proxy, so the audit has to look for proxies. |
 | Model chosen on validation, test set scored once | Keeps the reported numbers honest. |
-| Cut-off from economics, not 0.5 | The policy is a business input; the simulator shows its effect on unseen applicants. |
+| Cut-off from economics, not 0.5 | The policy is a business input; the simulator shows its effect on validation applicants. |
+| Interactive analysis on validation only | The simulator and fairness view let you search over cut-offs; doing that on the test set would leak, so test is reserved for the headline metrics. |
+| A synthetic-data demo, labelled as such | Anyone can run the full app in one command without the Kaggle download, and can't mistake its numbers for results. |
 | SHAP TreeExplainer for reasons | Exact for trees, additive (contributions sum to the score), ~3 ms per applicant, so it runs live on every request. |
 
 ## Limitations
 
 - **No time-based split.** The data has no application dates, so the split is random (stratified).
-  In production I'd train on older loans, validate on newer ones, and monitor drift.
+  Real performance on future applicants is likely lower than the test numbers suggest.
 - **Selection bias.** Outcomes exist only for loans Home Credit approved. We never see how rejected
   applicants would have done, which also limits any fairness conclusion.
 - **One lender, one market.** Not US data, consumer cash and revolving loans only; the currency and the payment period are
   undocumented, so ratios are relative signals.
 - **Placeholder economics.** 60% loss and 10% margin are assumptions; real values vary per loan, and
   the simulator ignores timing, prepayment and partial recoveries.
-- **Approve-everyone looks profitable** because the test loans were already approved by Home Credit;
-  the people it rejected are missing, so every baseline here is flattered.
+- **Approve-everyone looks profitable** because every loan in the data was already approved by Home
+  Credit; the people it rejected are missing, so every baseline here is flattered.
 - **Opaque inputs.** The three external scores are the strongest features, and their provenance is unknown.
 - **Reason codes explain the model, not the world.** They are not an adverse-action notice. SHAP is
   not causal, and correlated inputs (the
   three scores; loan amount and purchase price) can share credit in ways that look arbitrary.
 - **Fairness audit is descriptive.** It measures gaps at one cut-off on past approved loans; it does not
   fix them, and it is not a legal disparate-impact analysis.
+- **Uncertainty is partly measured.** Confidence intervals cover sampling noise in the evaluation
+  applicants, not variation from retraining on other samples or from a different time period.
+
+## What I'd do with production data
+
+- **Validate out of time:** train on older vintages, test on newer ones, and track performance by vintage.
+- **Monitor:** score drift (population stability index), calibration by decile and by segment, and the
+  fairness table on live decisions, with alerts before the cut-off's assumptions break.
+- **Handle reject inference:** use declined applicants' later bureau outcomes, or a small randomised
+  approval band, to learn how the model does on people the old policy turned away.
+- **Price per loan:** replace the single loss and margin with per-product estimates (term, rate,
+  recoveries, funding cost), so the cut-off differs where the economics differ.
+- **Govern the reason codes:** a reviewed mapping from features to approved reason statements, tested for
+  stability, before anything like an adverse-action notice is generated.
 
 ## Try it in one command (no Kaggle download)
 
@@ -140,7 +160,8 @@ docker build -t glassbox . && docker run --rm -p 8000:8000 glassbox
 
 ## Run it locally with the real data
 
-Needs Python 3.12+, Node 20+, and on macOS `brew install libomp` (for LightGBM).
+Needs Python 3.11+, Node 20+, and on macOS `brew install libomp` (for LightGBM). To reproduce the exact
+library versions behind the published numbers (Python 3.12+), add `-c constraints.txt` to the install.
 
 1. **Data** (not in the repo; Kaggle's terms restrict redistribution): log in to Kaggle, open the
    [competition data page](https://www.kaggle.com/competitions/home-credit-default-risk/data), accept
@@ -160,20 +181,24 @@ Needs Python 3.12+, Node 20+, and on macOS `brew install libomp` (for LightGBM).
    ```
    Open http://localhost:5173. Pages: `/` (overview), `/assess` (decision desk), `/portfolio` (simulator).
 
-Tests need no data download: `pytest` (41 tests: cleaning and split, features, the monotone
-constraint, metrics, SHAP additivity and reason codes, threshold and portfolio maths, and the API
-contract, all on synthetic data).
+Tests need no data download: `pytest` runs 53 tests on synthetic data: cleaning and split, features,
+the monotone constraint, metrics and bootstrap intervals, SHAP additivity and reason codes, threshold
+and portfolio maths, the fairness audit, the API contract, the `metrics.json` schema, and an end-to-end
+test that trains with the real training code and serves the result through the production server.
+CI runs them on Python 3.11 and 3.13, plus lint, the web build, the demo and the Docker image.
 
 ## Repository layout
 
 ```
-src/credit_risk/   data.py, features.py, models.py, train.py, evaluate.py, explain.py, decision.py, whatif.py
-api/               FastAPI app and request/response schemas
+src/credit_risk/   data, features, models, train, evaluate, explain, decision, fairness, whatif,
+                   reports (metrics schema), synthetic + demo (no-download demo)
+api/               main.py (API), schemas.py, serve.py (API + built web app on one port)
 web/               React + TypeScript app (Vite)
-tests/             pytest suite (synthetic data)
-notebooks/         01 exploratory analysis, 02 feature-set trade-off
-reports/           metrics.json and figures (aggregates only)
-docs/              plan and screenshots
+tests/             pytest suite (synthetic data only)
+notebooks/         01 exploratory analysis, 02 feature-set trade-off with ablation
+reports/           metrics.json, fairness.json and figures (aggregates only)
+scripts/demo.sh    one-command demo;  Dockerfile: the same in a container
+docs/              plan, screenshots and the demo GIF
 ```
 
 Built with Python, pandas, scikit-learn, LightGBM, FastAPI, React and TypeScript. The 3D views are
