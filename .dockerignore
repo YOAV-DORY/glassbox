@@ -1,0 +1,15 @@
+# Keep the build context small and never ship data or local environments.
+.git
+.venv
+data
+artifacts
+reports
+notebooks
+docs
+tests
+web/node_modules
+web/dist
+**/__pycache__
+**/*.egg-info
+.env
+.env.*
