@@ -6,8 +6,8 @@ working: in a live decision app, and in a 3D view of the model's actual risk sur
 
 ![Glassbox landing page](docs/images/landing.jpg)
 
-> **Status:** work in progress. Data, model, evaluation, reason codes, API and app are done
-> (milestones M0–M3). Next: a policy and portfolio simulator (M4) and a fairness audit (M5).
+> **Status:** work in progress. Data, model, evaluation, reason codes, the policy simulator, API and
+> app are done (milestones M0–M4). Next: a fairness audit (M5).
 > See [docs/PLAN.md](docs/PLAN.md).
 
 ## The problem
@@ -36,8 +36,11 @@ Glassbox is built around those three points, on the public
   measured with SHAP. On a decline they are the principal reasons an adverse action notice would list.
 - **Policy:** approve when expected profit is positive: `p < margin / (margin + loss given default)`.
   With placeholder economics (60% loss on default, 10% margin) the cut-off is **14.3%**.
-- **API (FastAPI):** `POST /predict` (score, decision, reasons), `GET /model/info`,
-  `GET /model/surface`. Docs at `/docs`.
+- **Portfolio simulator:** set the loss and the margin (or a manual cut-off) and replay the policy on
+  61,503 test applicants with known outcomes: approval rate, defaults, losses, profit, and a profit
+  curve across every cut-off. The decision desk uses the same policy.
+- **API (FastAPI):** `POST /predict` (score, decision, reasons, expected profit), `POST /portfolio/simulate`,
+  `GET /model/info`, `GET /model/surface`. Docs at `/docs`.
 - **App (React + TypeScript):** a landing page and a live decision desk. The decision updates as
   you type; three example applicants (low risk, borderline just under the cut-off, high risk) are one click away.
 
@@ -68,6 +71,25 @@ A random model scores ROC-AUC 0.5 and PR-AUC 0.081 (the default rate).
   ([notebook 02](notebooks/02_feature_set_tradeoff.ipynb)). The small set makes the form usable and the
   reasons readable, at no cost in accuracy.
 
+### The policy, in money
+
+![Portfolio simulator](docs/images/portfolio.jpg)
+
+Replaying the default policy (60% loss, 10% margin) on the 61,503 test applicants:
+
+| Rule | Cut-off | Approved | Default among approved | Profit |
+|---|---|---|---|---|
+| **Cost-based policy** | **14.3%** | **85.7%** | **5.30%** | **+2.07B** |
+| Approve everyone | none | 100% | 8.07% | +1.73B |
+| 50% cut-off | 50% | 99.3% | 7.80% | +1.78B |
+
+- **The formula's cut-off (14.3%) sits next to the most profitable cut-off in hindsight (14%).** That is
+  what calibration buys: `margin / (margin + loss)` only finds the peak if the probabilities are honest.
+  A test checks the same thing on synthetic data.
+- **The model's loss forecast matched reality:** 984M expected vs 984M actual on the approved loans.
+- A 50% cut-off barely differs from approving everyone: with 8% defaults, almost nobody scores above 50%.
+- Profit is in the dataset's (unnamed) currency, under the simplifications listed in the app.
+
 ### What drives the model (SHAP)
 
 ![SHAP beeswarm: one dot per applicant per feature](reports/figures/shap_beeswarm.png)
@@ -92,6 +114,7 @@ More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_i
 | Feature engineering inside the saved pipeline | Training and the API compute features identically. A test caught a real train/serve skew bug: a JSON `null` became a text column that LightGBM rejected. |
 | Gender, age, marital status excluded from the model, kept for the audit | Mirrors US fair-lending rules. EDA found the "not employed" flag is mostly pensioners, i.e. an age proxy, so the audit has to look for proxies. |
 | Model chosen on validation, test set scored once | Keeps the reported numbers honest. |
+| Cut-off from economics, not 0.5 | The policy is a business input; the simulator shows its effect on unseen applicants. |
 | SHAP TreeExplainer for reasons | Exact for trees, additive (contributions sum to the score), ~3 ms per applicant, so it runs live on every request. |
 
 ## Limitations
@@ -102,11 +125,14 @@ More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_i
   applicants would have done, which also limits any fairness conclusion.
 - **One lender, one market.** Not US data, consumer cash and revolving loans only; the currency and the payment period are
   undocumented, so ratios are relative signals.
-- **Placeholder economics.** 60% loss and 10% margin are assumptions; real values vary per loan.
+- **Placeholder economics.** 60% loss and 10% margin are assumptions; real values vary per loan, and
+  the simulator ignores timing, prepayment and partial recoveries.
+- **Approve-everyone looks profitable** because the test loans were already approved by Home Credit;
+  the people it rejected are missing, so every baseline here is flattered.
 - **Opaque inputs.** The three external scores are the strongest features, and their provenance is unknown.
 - **Reason codes explain the model, not the world.** SHAP is not causal, and correlated inputs (the
   three scores; loan amount and purchase price) can share credit in ways that look arbitrary.
-- **Not built yet:** the policy simulator (M4) and the fairness audit (M5).
+- **Not built yet:** the fairness audit (M5).
 
 ## Run it locally
 
@@ -128,11 +154,11 @@ Needs Python 3.12+, Node 20+, and on macOS `brew install libomp` (for LightGBM).
    ```bash
    cd web && npm install && npm run dev
    ```
-   Open http://localhost:5173.
+   Open http://localhost:5173. Pages: `/` (overview), `/assess` (decision desk), `/portfolio` (simulator).
 
-Tests need no data download: `pytest` (32 tests: cleaning and split, features, the monotone
-constraint, metrics, SHAP additivity and reason codes, threshold maths, and the API contract, all on
-synthetic data).
+Tests need no data download: `pytest` (41 tests: cleaning and split, features, the monotone
+constraint, metrics, SHAP additivity and reason codes, threshold and portfolio maths, and the API
+contract, all on synthetic data).
 
 ## Repository layout
 
