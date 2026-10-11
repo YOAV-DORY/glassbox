@@ -46,7 +46,7 @@ def test_predict_returns_probability_and_consistent_decision(client: TestClient)
     body = response.json()
 
     assert set(body) == {"probability_of_default", "decision", "threshold", "model_version",
-                         "reasons_up", "reasons_down"}
+                         "expected_profit", "reasons_up", "reasons_down"}
     assert 0 < body["probability_of_default"] < 1
     for reason in body["reasons_up"]:
         assert reason["impact"] > 0 and reason["label"] and reason["value"]
@@ -77,3 +77,31 @@ def test_predict_rejects_unknown_and_missing_fields(client: TestClient) -> None:
 
     missing = {k: v for k, v in VALID_APPLICANT.items() if k != "amt_credit"}
     assert client.post("/predict", json={"applicant": missing}).status_code == 422
+
+
+def test_predict_follows_the_policy(client: TestClient) -> None:
+    strict = {"lgd": 0.9, "margin": 0.02}  # cut-off 0.02 / 0.92: about 2%
+    body = client.post("/predict", json={"applicant": VALID_APPLICANT, "policy": strict}).json()
+    assert body["threshold"] == pytest.approx(0.02 / 0.92)
+    # Positive expected profit exactly when the probability is under the formula's cut-off.
+    assert (body["expected_profit"] > 0) == (body["probability_of_default"] < body["threshold"])
+
+    manual = client.post("/predict", json={"applicant": VALID_APPLICANT, "policy": {"threshold_override": 0.99}}).json()
+    assert manual["threshold"] == 0.99 and manual["decision"] == "approve"
+
+
+def test_portfolio_simulation_contract(client: TestClient) -> None:
+    response = client.post("/portfolio/simulate", json={"lgd": 0.6, "margin": 0.1})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["formula_threshold"] == pytest.approx(0.1 / 0.7)
+    assert body["policy"]["threshold"] == pytest.approx(0.1 / 0.7)
+    assert body["approve_all"]["approval_rate"] == 1.0
+    assert len(body["curve"]) == 60
+    rates = [point["approval_rate"] for point in body["curve"]]
+    assert rates == sorted(rates)  # a higher cut-off never approves fewer people
+
+
+@pytest.mark.parametrize("policy", [{"lgd": 0}, {"margin": 1.5}, {"threshold_override": 1}, {"risk": 1}])
+def test_portfolio_rejects_invalid_policies(client: TestClient, policy: dict) -> None:
+    assert client.post("/portfolio/simulate", json=policy).status_code == 422

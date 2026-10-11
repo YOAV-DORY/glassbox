@@ -9,6 +9,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN
+from credit_risk.decision import cost_based_threshold
+
 ContractType = Literal["Cash loans", "Revolving loans"]
 IncomeType = Literal[
     "Working",
@@ -53,9 +56,24 @@ class Applicant(BaseModel):
     region_rating: Literal[1, 2, 3]
 
 
+class PolicyRequest(BaseModel):
+    """Lending economics chosen by the user. Every field has a default, so it can be omitted."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    lgd: float = Field(DEFAULT_LGD, gt=0, le=1, description="Share of the loan lost on a default")
+    margin: float = Field(DEFAULT_MARGIN, gt=0, le=1, description="Profit on a repaid loan, as a share of it")
+    threshold_override: float | None = Field(None, gt=0, lt=1, description="Set the cut-off by hand")
+
+    def threshold(self) -> float:
+        if self.threshold_override is not None:
+            return self.threshold_override
+        return cost_based_threshold(self.lgd, self.margin)
+
+
 class PredictRequest(BaseModel):
     applicant: Applicant
-    # M4 adds an optional lending policy (LGD, margin) here.
+    policy: PolicyRequest = Field(default_factory=PolicyRequest)
 
 
 class Reason(BaseModel):
@@ -72,6 +90,7 @@ class PredictResponse(BaseModel):
     decision: Literal["approve", "decline"]
     threshold: float
     model_version: str
+    expected_profit: float  # of approving this loan, under the policy, before knowing the outcome
     # Strongest factors first. On a decline, reasons_up are the principal reasons.
     reasons_up: list[Reason]
     reasons_down: list[Reason]
@@ -117,3 +136,32 @@ class RiskSurface(BaseModel):
     y: list[float]
     z: list[list[float]]  # z[i][j] = probability of default at y[i], x[j]
     threshold: float
+
+
+class PortfolioOutcome(BaseModel):
+    """What a cut-off would have done to the test applicants, using their real outcomes."""
+
+    threshold: float
+    approval_rate: float
+    bad_rate: float  # share of approved loans that defaulted
+    approved: int
+    expected_loss: float  # the model's forecast for the approved loans
+    realized_loss: float  # what actually happened
+    profit: float
+
+
+class CurvePoint(BaseModel):
+    threshold: float
+    approval_rate: float
+    bad_rate: float
+    profit: float
+
+
+class PortfolioResponse(BaseModel):
+    applicants: int  # test-set applicants the model never saw during training
+    formula_threshold: float  # margin / (margin + lgd)
+    best_threshold: float  # the most profitable cut-off in hindsight; close to the formula if calibrated
+    policy: PortfolioOutcome  # the chosen cut-off (formula, or the manual override)
+    approve_all: PortfolioOutcome
+    cutoff_50: PortfolioOutcome  # the naive 50% cut-off
+    curve: list[CurvePoint]
