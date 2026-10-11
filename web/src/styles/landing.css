@@ -276,6 +276,11 @@
   padding-block: 120px;
 }
 
+.numbers-head {
+  grid-column: 1 / -1;
+  margin-bottom: -12px;
+}
+
 .number {
   display: flex;
   flex-direction: column;

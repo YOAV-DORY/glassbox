@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { predict, validateDraft } from "../api";
 import { ApplicantForm } from "../components/ApplicantForm";
@@ -7,6 +7,7 @@ import { DecisionPanel } from "../components/DecisionPanel";
 import { KineticText } from "../components/kinetic";
 import { EXAMPLES } from "../examples";
 import { formatPercent } from "../format";
+import { useOnScreen } from "../hooks";
 import type { ApplicantDraft, ModelInfo, Policy, PredictResponse } from "../types";
 import { useLiveRequest } from "../useLiveRequest";
 
@@ -14,7 +15,6 @@ const START = EXAMPLES[1]; // open on the borderline case: the most interesting 
 
 const HOW_TO = [
   "Pick an example, or type over any value.",
-  "The decision updates as you go. No submit button.",
   "Change one thing at a time to see what moves the risk.",
 ];
 
@@ -41,37 +41,43 @@ export function Assess({ info, policy }: { info: ModelInfo | null; policy: Polic
   };
 
   const result = prediction.result;
+  const panelRef = useRef<HTMLDivElement>(null);
+  const panelVisible = useOnScreen(panelRef);
 
   return (
     <main className="assess">
-      <section className="intro">
-        <p className="eyebrow load-in">Decision desk</p>
-        <h1>
-          <KineticText text="Assess an" delayMs={100} /> <KineticText text="applicant." delayMs={400} className="intro-accent" />
-        </h1>
-        <p className="lede load-in" style={{ animationDelay: "500ms" }}>
-          Fill in the application on the left. On the right, the model estimates the chance of default and the
-          lending policy turns it into a decision.
-        </p>
-        <ol className="how-to load-in" style={{ animationDelay: "650ms" }}>
-          {HOW_TO.map((tip, i) => (
-            <li key={tip}>
-              <span>{i + 1}</span>
-              {tip}
-            </li>
-          ))}
-        </ol>
-      </section>
-
       <div className="workspace">
-        <ApplicantForm draft={draft} setField={setField} activeExample={activeExample} onExample={loadExample} />
-        <div className="panel-wrap load-in" style={stagger(4)}>
+        {/* The intro sits in the form column, so the decision panel starts at the top right. */}
+        <div className="desk-main">
+          <section className="intro">
+            <p className="eyebrow load-in">Decision desk</p>
+            <h1>
+              <KineticText text="Assess an" delayMs={100} />{" "}
+              <KineticText text="applicant." delayMs={400} className="intro-accent" />
+            </h1>
+            <p className="lede load-in" style={{ animationDelay: "500ms" }}>
+              Fill in the application and the decision panel updates as you go: the model estimates the chance of
+              default, and the lending policy turns it into approve or decline.
+            </p>
+            <ol className="how-to load-in" style={{ animationDelay: "650ms" }}>
+              {HOW_TO.map((tip, i) => (
+                <li key={tip}>
+                  <span>{i + 1}</span>
+                  {tip}
+                </li>
+              ))}
+            </ol>
+          </section>
+          <ApplicantForm draft={draft} setField={setField} activeExample={activeExample} onExample={loadExample} />
+        </div>
+        <div ref={panelRef} className="panel-wrap load-in" style={stagger(4)}>
           <DecisionPanel prediction={prediction} info={info} policy={policy} />
         </div>
       </div>
 
-      {/* Small screens: the panel scrolls away while editing, so keep the verdict pinned. */}
-      {result && (
+      {/* Small screens: the panel scrolls away while editing, so pin the verdict, but only
+          while the panel itself is off screen (otherwise the bar would cover it). */}
+      {result && !panelVisible && (
         <div className={`mini-result mini-result--${result.decision}`}>
           <span className="mini-figure">{formatPercent(result.probability_of_default)}</span>
           <span className="mini-label">chance of default</span>

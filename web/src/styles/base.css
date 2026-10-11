@@ -7,7 +7,7 @@
   --paper-deep: #e8e2d4;
   --ink: #15171c;
   --ink-2: #4a4e57;
-  --ink-3: #8a8d94;
+  --ink-3: #64676e; /* 4.8:1 on paper: passes WCAG AA for small text */
   --rule: rgba(21, 23, 28, 0.16);
   --rule-soft: rgba(21, 23, 28, 0.08);
   --grid: rgba(21, 23, 28, 0.045);
@@ -150,6 +150,7 @@ select {
 }
 
 .topnav-link {
+  white-space: nowrap;
   padding: 8px 14px;
   border: 0;
   border-radius: 999px;
@@ -212,6 +213,12 @@ select {
   box-shadow: 0 0 0 3px rgba(23, 102, 63, 0.15);
 }
 
+.status.is-waiting i {
+  background: #c9a227;
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.2);
+  animation: pulse 0.9s ease-in-out infinite alternate;
+}
+
 .status.is-down i {
   background: var(--decline);
   box-shadow: 0 0 0 3px rgba(192, 57, 27, 0.15);
@@ -224,6 +231,13 @@ select {
   border-bottom: 1px solid #e8cf98;
   font-size: 14px;
   color: #5c4310;
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
 }
 
 /* ---------- Buttons ---------- */
@@ -364,10 +378,20 @@ select {
     padding-block: 14px;
   }
 
-  .topnav-link,
+  .topnav-link:not(.keep),
   .status-version,
+  .status-text,
   .cta-long {
     display: none;
+  }
+
+  .topnav-link {
+    padding: 8px 8px;
+    font-size: 11px;
+  }
+
+  .status {
+    margin-left: 4px;
   }
 
   .topnav-cta {
@@ -375,9 +399,6 @@ select {
     font-size: 13px;
   }
 
-  .topnav .topnav-link:first-child:is(a) {
-    display: inline-flex; /* keep "← Overview" on the assess page */
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

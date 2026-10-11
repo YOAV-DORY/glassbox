@@ -1,4 +1,5 @@
 import { formatAmount, formatPercent } from "../format";
+import { activeThreshold } from "../policy";
 import { Link } from "../router";
 import type { ModelInfo, Policy, PredictResponse } from "../types";
 import type { LiveState } from "../useLiveRequest";
@@ -12,7 +13,7 @@ export function DecisionPanel(props: { prediction: LiveState<PredictResponse>; i
   const { result, loading, error } = props.prediction;
   const { info, policy } = props;
   const probability = result?.probability_of_default ?? null;
-  const threshold = result?.threshold ?? info?.policy.threshold ?? 0.15;
+  const threshold = result?.threshold ?? activeThreshold(policy); // same formula as the API
   const shown = useTweenedNumber(probability ?? 0);
   const [whole, decimals] = (shown * 100).toFixed(1).split(".");
 
@@ -35,6 +36,9 @@ export function DecisionPanel(props: { prediction: LiveState<PredictResponse>; i
         )}
       </p>
 
+      {loading && !result && !error && (
+        <p className="panel-wait">Scoring… The first request can take up to a minute while the server wakes up.</p>
+      )}
       {error ? (
         <p className="panel-error">{error}</p>
       ) : (
@@ -52,14 +56,19 @@ export function DecisionPanel(props: { prediction: LiveState<PredictResponse>; i
       <RiskScale probability={probability} threshold={threshold} average={info?.average_default_rate ?? null} />
 
       {probability !== null && info && result && (
-        <p className="panel-compare">
-          <strong>{(probability / info.average_default_rate).toFixed(1)}×</strong> the average applicant's risk ·
-          expected profit if approved{" "}
-          <strong className={result.expected_profit >= 0 ? "is-gain" : "is-loss"}>
-            {result.expected_profit >= 0 ? "+" : "−"}
-            {formatAmount(Math.abs(result.expected_profit))}
-          </strong>
-        </p>
+        <dl className="panel-facts">
+          <div>
+            <dt>Versus the average applicant</dt>
+            <dd>{(probability / info.average_default_rate).toFixed(1)}× the risk</dd>
+          </div>
+          <div>
+            <dt>Expected profit if approved</dt>
+            <dd className={result.expected_profit >= 0 ? "is-gain" : "is-loss"}>
+              {result.expected_profit >= 0 ? "+" : "−"}
+              {formatAmount(Math.abs(result.expected_profit))}
+            </dd>
+          </div>
+        </dl>
       )}
 
       {result && !error && <Reasons up={result.reasons_up} down={result.reasons_down} decision={result.decision} />}

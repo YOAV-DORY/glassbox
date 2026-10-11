@@ -8,6 +8,7 @@ import { COLORS, depthFade, fitCanvas, line, project, type Vec3, type View } fro
 const HEIGHT = 1.5; // world units from lowest to highest risk
 const SPAN = 2.2; // world units across each score axis
 const RISK_CAP = 0.4; // heights stop at 40% default risk
+const PAPER = "#f5f2ea"; // the stage's background, for label outlines
 
 /**
  * The real model's predicted default risk over two credit-bureau scores, drawn as a
@@ -137,11 +138,16 @@ function drawLandscape(ctx: CanvasRenderingContext2D, surface: RiskSurface, view
   ctx.fillStyle = COLORS.ink;
   const label = (text: string, at: Vec3, color: string = COLORS.ink) => {
     const p = project(at, view);
+    // A paper-coloured outline under the text keeps labels readable where they cross lines.
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = PAPER;
+    ctx.lineJoin = "round";
+    ctx.strokeText(text, p.x + 6, p.y);
     ctx.fillStyle = color;
     ctx.fillText(text, p.x + 6, p.y);
   };
-  label("Bureau score 2 →", [h * 0.35, floor, -h * 1.12]);
-  label("Bureau score 3 →", [-h * 1.12, floor, h * 0.35]);
+  label("Bureau score 2 →", [h * 0.2, floor, -h * 1.3]);
+  label("Bureau score 3 →", [-h * 1.3, floor, h * 0.2]);
   label("Default risk ↑ (to 40%)", [-h, HEIGHT / 2, -h]);
   label(`cut-off ${formatPercent(threshold)}`, [h, cut, -h], COLORS.cobalt);
 }

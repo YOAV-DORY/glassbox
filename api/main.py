@@ -91,6 +91,7 @@ def model_info() -> ModelInfo:
         validation_roc_auc=val["roc_auc"],
         validation_pr_auc=val["pr_auc"],
         test_roc_auc=test.get("roc_auc"),
+        test_roc_auc_ci=metadata.get("test_roc_auc_ci"),
         test_pr_auc=test.get("pr_auc"),
         average_default_rate=val["actual_default_rate"],
         policy=DEFAULT_POLICY,

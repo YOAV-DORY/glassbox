@@ -85,6 +85,7 @@ export interface ModelInfo {
   validation_roc_auc: number;
   validation_pr_auc: number;
   test_roc_auc: number | null; // held-out test set, scored once after model selection
+  test_roc_auc_ci: [number, number] | null; // 95% bootstrap interval
   test_pr_auc: number | null;
   average_default_rate: number;
   policy: { lgd: number; margin: number; threshold: number };

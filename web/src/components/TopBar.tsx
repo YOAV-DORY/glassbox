@@ -23,7 +23,7 @@ export function TopBar(props: { page: "landing" | "assess" | "portfolio"; info: 
             <button type="button" className="topnav-link" onClick={() => scrollToSection("landscape")}>
               Risk landscape
             </button>
-            <Link to="/portfolio" className="topnav-link">
+            <Link to="/portfolio" className="topnav-link keep">
               Portfolio
             </Link>
             <Link to="/assess" className="topnav-cta">
@@ -35,15 +35,17 @@ export function TopBar(props: { page: "landing" | "assess" | "portfolio"; info: 
           </>
         ) : (
           <>
-            <Link to="/" className="topnav-link">
-              <span aria-hidden="true">←</span> Overview
+            <Link to="/" className="topnav-link keep">
+              <span aria-hidden="true">← </span>Overview
             </Link>
-            <Link to={page === "assess" ? "/portfolio" : "/assess"} className="topnav-link">
-              {page === "assess" ? "Portfolio" : "Decision desk"}
+            <Link to={page === "assess" ? "/portfolio" : "/assess"} className="topnav-link keep">
+              {page === "assess" ? "Portfolio" : <><span className="cta-long">Decision </span>desk</>}
             </Link>
-            <span className={offline ? "status is-down" : "status"}>
+            <span className={offline ? "status is-down" : info ? "status" : "status is-waiting"}>
               <i />
-              {offline ? "API offline" : info ? "Model online" : "Connecting"}
+              <span className="status-text">
+                {offline ? "Model server offline" : info ? "Model online" : "Waking up the model server…"}
+              </span>
               {info && <span className="status-version">· {info.model_version}</span>}
             </span>
           </>

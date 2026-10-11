@@ -377,15 +377,6 @@
   color: var(--ink-2);
 }
 
-/* Expected profit in the decision panel */
-.panel-compare .is-gain {
-  color: var(--approve);
-}
-
-.panel-compare .is-loss {
-  color: var(--decline);
-}
-
 @media (max-width: 1150px) {
   .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));

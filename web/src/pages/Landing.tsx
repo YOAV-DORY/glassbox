@@ -232,13 +232,18 @@ function Numbers({ info }: { info: ModelInfo }) {
     {
       value: info.test_roc_auc ?? info.validation_roc_auc,
       format: (v: number) => v.toFixed(3),
-      label: "ROC-AUC on applicants it never saw",
+      label: info.test_roc_auc_ci
+        ? `ROC-AUC on applicants it never saw (95% CI ${info.test_roc_auc_ci[0].toFixed(3)}–${info.test_roc_auc_ci[1].toFixed(3)})`
+        : "ROC-AUC on applicants it never saw",
     },
     { value: info.policy.threshold, format: (v: number) => formatPercent(v), label: "policy cut-off, from loss vs. margin" },
     { value: info.average_default_rate, format: (v: number) => formatPercent(v), label: "of applicants default on average" },
   ];
   return (
     <section className="numbers">
+      <Reveal className="numbers-head">
+        <p className="eyebrow">The model in four numbers</p>
+      </Reveal>
       {items.map((item, i) => (
         <Reveal key={item.label} className="number" delayMs={i * 90}>
           <CountUp value={item.value} format={item.format} />

@@ -1,12 +1,11 @@
-import { useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 
 import { formatMoney, formatPercent } from "../format";
 import type { PortfolioResponse } from "../types";
 
-// Drawing area inside the SVG's coordinate system (it scales to the container's width).
-const W = 760;
-const H = 320;
-const PAD = { left: 64, right: 24, top: 24, bottom: 40 };
+// The SVG is drawn at its real on-screen width (1 unit = 1 pixel), so labels stay readable
+// on a phone instead of shrinking with the whole picture.
+const PAD = { left: 56, right: 16, top: 24, bottom: 40 };
 const X_MAX = 0.6;
 
 /**
@@ -17,6 +16,18 @@ const X_MAX = 0.6;
 export function ProfitCurve(props: { data: PortfolioResponse; onPick: (threshold: number) => void }) {
   const { data } = props;
   const [hover, setHover] = useState<number | null>(null); // index into data.curve
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(760);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    const observer = new ResizeObserver(([entry]) => setW(Math.max(300, Math.round(entry.contentRect.width))));
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, []);
+  const narrow = W < 560;
+  const H = narrow ? 260 : 320;
+  const flipAt = narrow ? 0.3 : 0.42; // past this cut-off, labels go on the left so they stay inside
 
   const profits = data.curve.flatMap((p) => [p.realized_profit, p.expected_profit]);
   const low = Math.min(...profits, data.approve_all.realized_profit, 0);
@@ -46,9 +57,12 @@ export function ProfitCurve(props: { data: PortfolioResponse; onPick: (threshold
   const hovered = hover === null ? null : data.curve[hover];
 
   return (
+    <div ref={boxRef} className="profit-curve-box">
     <svg
       className="profit-curve"
       viewBox={`0 0 ${W} ${H}`}
+      width={W}
+      height={H}
       role="img"
       aria-label={`Profit by cut-off. Most profitable at ${formatPercent(data.best_threshold, 0)}.`}
       onPointerMove={(event) => setHover(nearest(event))}
@@ -63,7 +77,7 @@ export function ProfitCurve(props: { data: PortfolioResponse; onPick: (threshold
           </text>
         </g>
       ))}
-      {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6].map((t) => (
+      {(narrow ? [0, 0.2, 0.4, 0.6] : [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]).map((t) => (
         <text key={t} className="axis-label" x={x(t)} y={H - 14} textAnchor="middle">
           {formatPercent(t, 0)}
         </text>
@@ -85,9 +99,9 @@ export function ProfitCurve(props: { data: PortfolioResponse; onPick: (threshold
       {/* Near the right edge the label goes on the left of its line, so it never runs off the chart */}
       <text
         className="best-label"
-        x={x(data.best_threshold) + (data.best_threshold > 0.42 ? -6 : 6)}
+        x={x(data.best_threshold) + (data.best_threshold > flipAt ? -6 : 6)}
         y={PAD.top + 10}
-        textAnchor={data.best_threshold > 0.42 ? "end" : "start"}
+        textAnchor={data.best_threshold > flipAt ? "end" : "start"}
       >
         most profitable here {formatPercent(data.best_threshold, 0)}
       </text>
@@ -101,14 +115,15 @@ export function ProfitCurve(props: { data: PortfolioResponse; onPick: (threshold
         <g className="hover">
           <line x1={x(hovered.threshold)} x2={x(hovered.threshold)} y1={PAD.top} y2={H - PAD.bottom} />
           <circle cx={x(hovered.threshold)} cy={y(hovered.realized_profit)} r={4} />
-          <text x={x(hovered.threshold) + (hovered.threshold > 0.42 ? -10 : 10)} y={y(hovered.realized_profit) - 12}
-            textAnchor={hovered.threshold > 0.42 ? "end" : "start"}>
-            {formatPercent(hovered.threshold, 0)}: {formatMoney(hovered.realized_profit, true)} (expected{" "}
-            {formatMoney(hovered.expected_profit, true)}) · approve {formatPercent(hovered.approval_rate, 0)}
+          <text x={x(hovered.threshold) + (hovered.threshold > flipAt ? -10 : 10)} y={y(hovered.realized_profit) - 12}
+            textAnchor={hovered.threshold > flipAt ? "end" : "start"}>
+            {formatPercent(hovered.threshold, 0)}: {formatMoney(hovered.realized_profit, true)}
+            {!narrow && ` (expected ${formatMoney(hovered.expected_profit, true)}) · approve ${formatPercent(hovered.approval_rate, 0)}`}
           </text>
         </g>
       )}
     </svg>
+    </div>
   );
 }
 

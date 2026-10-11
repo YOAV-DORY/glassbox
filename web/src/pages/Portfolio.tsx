@@ -42,6 +42,9 @@ export function Portfolio({ policy, setPolicy }: { policy: Policy; setPolicy: (p
 
         <div className={portfolio.loading ? "sim-results is-busy" : "sim-results"}>
           {portfolio.error && <p className="panel-error">{portfolio.error}</p>}
+          {!data && !portfolio.error && (
+            <p className="panel-wait">Replaying the policy… The first request can take up to a minute while the server wakes up.</p>
+          )}
           <p className="bias-note load-in" style={{ animationDelay: "350ms" }}>
             <strong>Read with care:</strong> outcomes exist only for loans the lender approved in the past. Declining
             one of them here is a what-if on an approved loan, so everything on the decline side (losses avoided, good

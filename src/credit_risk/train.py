@@ -175,6 +175,8 @@ def run(
 
     metadata = build_metadata(best, splits.train, val_metrics[best], test_metrics[best])
     metadata["dataset"] = dataset
+    ci = report["test_auc_bootstrap"]["b" if best == "lgbm" else "a"]
+    metadata["test_roc_auc_ci"] = [ci["low"], ci["high"]]
     if best == "lgbm":  # SHAP's TreeExplainer needs a tree model
         explainer = Explainer(models[best])
         sample = splits.test.sample(min(10_000, len(splits.test)), random_state=0)  # more rows add little

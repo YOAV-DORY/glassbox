@@ -25,6 +25,11 @@ export function App() {
 
   const page = path.startsWith("/assess") ? "assess" : path.startsWith("/portfolio") ? "portfolio" : "landing";
 
+  useEffect(() => {
+    const titles = { landing: "Credit decisions you can see inside", assess: "Decision desk", portfolio: "Portfolio simulator" };
+    document.title = `Glassbox · ${titles[page]}`;
+  }, [page]);
+
   return (
     <div className="app">
       <TopBar page={page} info={info} offline={offline} />

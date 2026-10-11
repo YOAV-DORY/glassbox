@@ -122,6 +122,7 @@ class ModelInfo(BaseModel):
     validation_roc_auc: float
     validation_pr_auc: float
     test_roc_auc: float | None  # held-out test set, scored once after model selection
+    test_roc_auc_ci: list[float] | None  # 95% bootstrap interval for test_roc_auc
     test_pr_auc: float | None
     average_default_rate: float  # in the validation data; context for a single prediction
     policy: Policy
