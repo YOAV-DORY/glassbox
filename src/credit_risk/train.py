@@ -22,6 +22,7 @@ from credit_risk.artifacts import artifacts_dir, save_artifacts
 from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS, PROJECT_ROOT, REPORTS_DIR, TARGET
 from credit_risk.data import load_splits
 from credit_risk.evaluate import basic_metrics, plot_evaluation
+from credit_risk.explain import LABELS, Explainer, global_importance, plot_importance
 from credit_risk.decision import cost_based_threshold
 from credit_risk.models import build_logreg_pipeline, fit_lgbm
 from credit_risk.whatif import plot_risk_map
@@ -118,6 +119,14 @@ def main() -> None:
     (REPORTS_DIR / "metrics.json").write_text(json.dumps(report, indent=2))
 
     metadata = build_metadata(best, splits.train, val_metrics[best], test_metrics[best])
+    if best == "lgbm":  # SHAP's TreeExplainer needs a tree model
+        explainer = Explainer(models[best])
+        sample = splits.test.sample(10_000, random_state=0)  # SHAP on 61k rows adds little
+        importance = global_importance(explainer, sample)
+        metadata["global_importance"] = [
+            {"feature": f, "label": LABELS[f], "importance": round(float(v), 4)} for f, v in importance.items()
+        ]
+        figures += plot_importance(explainer, sample, REPORTS_DIR / "figures")
     save_artifacts(models[best], metadata, artifacts_dir())
     figures.append(plot_risk_map(
         models[best], metadata["reference_applicant"], cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN),

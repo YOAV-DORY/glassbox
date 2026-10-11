@@ -45,8 +45,13 @@ def test_predict_returns_probability_and_consistent_decision(client: TestClient)
     assert response.status_code == 200
     body = response.json()
 
-    assert set(body) == {"probability_of_default", "decision", "threshold", "model_version"}
+    assert set(body) == {"probability_of_default", "decision", "threshold", "model_version",
+                         "reasons_up", "reasons_down"}
     assert 0 < body["probability_of_default"] < 1
+    for reason in body["reasons_up"]:
+        assert reason["impact"] > 0 and reason["label"] and reason["value"]
+    for reason in body["reasons_down"]:
+        assert reason["impact"] < 0
     expected = "approve" if body["probability_of_default"] < body["threshold"] else "decline"
     assert body["decision"] == expected
 

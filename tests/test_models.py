@@ -3,19 +3,8 @@ import pandas as pd
 import pytest
 
 from credit_risk.config import MODEL_INPUTS
-from credit_risk.data import clean, split
 from credit_risk.evaluate import expected_calibration_error, ks_statistic
-from credit_risk.models import fit_lgbm
-from tests.conftest import VALID_APPLICANT, make_raw_df
-
-
-@pytest.fixture(scope="module")
-def lgbm_pipeline():
-    # Synthetic data where a higher ext_source_2 clearly means lower risk, so the model learns it.
-    raw = make_raw_df(n=4000, seed=3)
-    raw["TARGET"] = (np.random.default_rng(3).random(len(raw)) < 0.25 - 0.2 * raw["EXT_SOURCE_2"]).astype(int)
-    splits = split(clean(raw))
-    return fit_lgbm(splits.train, splits.val)
+from tests.conftest import VALID_APPLICANT
 
 
 def test_lgbm_risk_never_rises_with_a_better_credit_score(lgbm_pipeline) -> None:

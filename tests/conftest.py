@@ -87,3 +87,12 @@ def trained_artifacts_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     metrics = {"roc_auc": 0.5, "pr_auc": 0.08, "actual_default_rate": 0.08}
     save_artifacts(pipeline, build_metadata("lgbm", splits.train, metrics), out_dir)
     return out_dir
+
+
+@pytest.fixture(scope="session")
+def lgbm_pipeline():
+    """LightGBM on synthetic data where a higher ext_source_2 clearly means lower risk."""
+    raw = make_raw_df(n=4000, seed=3)
+    raw["TARGET"] = (np.random.default_rng(3).random(len(raw)) < 0.25 - 0.2 * raw["EXT_SOURCE_2"]).astype(int)
+    splits = split(clean(raw))
+    return fit_lgbm(splits.train, splits.val)
