@@ -13,16 +13,19 @@ import pandas as pd
 from fastapi import FastAPI
 
 from api.schemas import (
+    FeatureImportance,
     HealthResponse,
     ModelInfo,
     Policy,
     PredictRequest,
     PredictResponse,
+    Reason,
     RiskSurface,
 )
 from credit_risk.artifacts import artifacts_dir, load_artifacts
 from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS
 from credit_risk.decision import cost_based_threshold, decide
+from credit_risk.explain import Explainer
 from credit_risk.whatif import risk_surface
 
 DEFAULT_POLICY = Policy(
@@ -37,6 +40,9 @@ SURFACE_FEATURES = ("ext_source_2", "ext_source_3")  # the two most informative 
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Fails at startup (not on the first request) if the model hasn't been trained.
     app.state.pipeline, app.state.metadata = load_artifacts(artifacts_dir())
+    # SHAP's TreeExplainer only works for tree models; a logistic regression gets no reasons.
+    is_tree = app.state.metadata["model_type"] == "lgbm"
+    app.state.explainer = Explainer(app.state.pipeline) if is_tree else None
     # The surface never changes for a given model, so compute it once and reuse it.
     x, y, z = risk_surface(app.state.pipeline, app.state.metadata["reference_applicant"], *SURFACE_FEATURES)
     app.state.surface = RiskSurface(
@@ -69,6 +75,7 @@ def model_info() -> ModelInfo:
         test_pr_auc=test.get("pr_auc"),
         average_default_rate=val["actual_default_rate"],
         policy=DEFAULT_POLICY,
+        global_importance=[FeatureImportance(**item) for item in metadata.get("global_importance", [])],
     )
 
 
@@ -82,9 +89,12 @@ def predict(request: PredictRequest) -> PredictResponse:
     # One-row DataFrame with the same columns, in the same order, as in training.
     row = pd.DataFrame([request.applicant.model_dump()])[MODEL_INPUTS]
     p_default = float(app.state.pipeline.predict_proba(row)[0, 1])
+    up, down = app.state.explainer.reasons(row) if app.state.explainer else ([], [])
     return PredictResponse(
         probability_of_default=p_default,
         decision=decide(p_default, DEFAULT_POLICY.threshold),
         threshold=DEFAULT_POLICY.threshold,
         model_version=app.state.metadata["model_version"],
+        reasons_up=[Reason(**vars(r)) for r in up],
+        reasons_down=[Reason(**vars(r)) for r in down],
     )

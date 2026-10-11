@@ -58,11 +58,29 @@ class PredictRequest(BaseModel):
     # M4 adds an optional lending policy (LGD, margin) here.
 
 
+class Reason(BaseModel):
+    """One factor behind a prediction (a SHAP contribution)."""
+
+    feature: str
+    label: str  # plain-language name, e.g. "Credit bureau score 2"
+    value: str  # the applicant's value, formatted, e.g. "0.48" or "no score on file"
+    impact: float  # contribution in log-odds; positive raises risk, negative lowers it
+
+
 class PredictResponse(BaseModel):
     probability_of_default: float
     decision: Literal["approve", "decline"]
     threshold: float
     model_version: str
+    # Strongest factors first. On a decline, reasons_up are the principal reasons.
+    reasons_up: list[Reason]
+    reasons_down: list[Reason]
+
+
+class FeatureImportance(BaseModel):
+    feature: str
+    label: str
+    importance: float  # mean |SHAP| over 10,000 test applicants, in log-odds
 
 
 class HealthResponse(BaseModel):
@@ -87,6 +105,7 @@ class ModelInfo(BaseModel):
     test_pr_auc: float | None
     average_default_rate: float  # in the validation data; context for a single prediction
     policy: Policy
+    global_importance: list[FeatureImportance]  # most influential features first
 
 
 class RiskSurface(BaseModel):
