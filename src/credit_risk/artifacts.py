@@ -13,7 +13,7 @@ import joblib
 import pandas as pd
 from sklearn.pipeline import Pipeline
 
-from credit_risk.config import ARTIFACTS_DIR, METADATA_FILE, MODEL_FILE, PORTFOLIO_FILE
+from credit_risk.config import ARTIFACTS_DIR, METADATA_FILE, MODEL_FILE, VALIDATION_COHORT_FILE
 
 
 def artifacts_dir() -> Path:
@@ -34,13 +34,13 @@ def load_artifacts(in_dir: Path) -> tuple[Pipeline, dict[str, Any]]:
     return joblib.load(model_path), json.loads((in_dir / METADATA_FILE).read_text())
 
 
-def save_cohort(predictions: pd.DataFrame, out_dir: Path, filename: str = PORTFOLIO_FILE) -> None:
+def save_cohort(predictions: pd.DataFrame, out_dir: Path, filename: str = VALIDATION_COHORT_FILE) -> None:
     """Save per-applicant predictions and outcomes for one data split."""
     out_dir.mkdir(parents=True, exist_ok=True)
     predictions.to_parquet(out_dir / filename, index=False)
 
 
-def load_cohort(in_dir: Path, filename: str = PORTFOLIO_FILE) -> pd.DataFrame | None:
+def load_cohort(in_dir: Path, filename: str = VALIDATION_COHORT_FILE) -> pd.DataFrame | None:
     """Saved predictions for one split, or None if training hasn't produced them yet."""
     path = in_dir / filename
     return pd.read_parquet(path) if path.exists() else None

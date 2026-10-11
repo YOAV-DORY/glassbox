@@ -249,6 +249,14 @@
   stroke-linejoin: round;
 }
 
+.profit-curve .curve-expected {
+  fill: none;
+  stroke: var(--cobalt);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  opacity: 0.8;
+}
+
 .profit-curve .best-line {
   stroke: var(--decline);
   stroke-dasharray: 4 4;
@@ -326,6 +334,38 @@
 
 .compare tr.is-yours td:first-child {
   color: var(--cobalt);
+}
+
+.bias-note {
+  margin: 0;
+  padding: 16px 20px;
+  border: 1px dashed var(--ink-3);
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.bias-note strong {
+  color: var(--ink);
+}
+
+.compare .se {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.compare td.flag {
+  color: var(--decline);
+  font-weight: 600;
+}
+
+.compare + .compare {
+  margin-top: 22px;
+}
+
+.fairness-proxy {
+  margin: 18px 0 0;
 }
 
 .assumptions ul {

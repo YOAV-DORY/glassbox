@@ -45,5 +45,191 @@
       "mean_predicted": 0.0806,
       "actual_default_rate": 0.0807
     }
+  },
+  "calibration_deciles": {
+    "validation": [
+      {
+        "decile": 1,
+        "n": 6151,
+        "low": 0.0015,
+        "high": 0.01611,
+        "mean_predicted": 0.01108,
+        "actual_rate": 0.01154,
+        "actual_se": 0.00136
+      },
+      {
+        "decile": 2,
+        "n": 6150,
+        "low": 0.01611,
+        "high": 0.02416,
+        "mean_predicted": 0.02018,
+        "actual_rate": 0.01886,
+        "actual_se": 0.00173
+      },
+      {
+        "decile": 3,
+        "n": 6150,
+        "low": 0.02416,
+        "high": 0.03232,
+        "mean_predicted": 0.0282,
+        "actual_rate": 0.02537,
+        "actual_se": 0.002
+      },
+      {
+        "decile": 4,
+        "n": 6150,
+        "low": 0.03232,
+        "high": 0.04152,
+        "mean_predicted": 0.0368,
+        "actual_rate": 0.03756,
+        "actual_se": 0.00242
+      },
+      {
+        "decile": 5,
+        "n": 6150,
+        "low": 0.04152,
+        "high": 0.05285,
+        "mean_predicted": 0.04698,
+        "actual_rate": 0.04732,
+        "actual_se": 0.00271
+      },
+      {
+        "decile": 6,
+        "n": 6150,
+        "low": 0.05285,
+        "high": 0.06673,
+        "mean_predicted": 0.05952,
+        "actual_rate": 0.06358,
+        "actual_se": 0.00311
+      },
+      {
+        "decile": 7,
+        "n": 6150,
+        "low": 0.06673,
+        "high": 0.08611,
+        "mean_predicted": 0.07583,
+        "actual_rate": 0.07724,
+        "actual_se": 0.0034
+      },
+      {
+        "decile": 8,
+        "n": 6150,
+        "low": 0.08611,
+        "high": 0.11675,
+        "mean_predicted": 0.09996,
+        "actual_rate": 0.10715,
+        "actual_se": 0.00394
+      },
+      {
+        "decile": 9,
+        "n": 6150,
+        "low": 0.11676,
+        "high": 0.18001,
+        "mean_predicted": 0.14357,
+        "actual_rate": 0.15593,
+        "actual_se": 0.00463
+      },
+      {
+        "decile": 10,
+        "n": 6151,
+        "low": 0.18003,
+        "high": 0.91732,
+        "mean_predicted": 0.28958,
+        "actual_rate": 0.26272,
+        "actual_se": 0.00561
+      }
+    ],
+    "test": [
+      {
+        "decile": 1,
+        "n": 6151,
+        "low": 0.00103,
+        "high": 0.01614,
+        "mean_predicted": 0.01112,
+        "actual_rate": 0.01106,
+        "actual_se": 0.00133
+      },
+      {
+        "decile": 2,
+        "n": 6150,
+        "low": 0.01614,
+        "high": 0.02417,
+        "mean_predicted": 0.02023,
+        "actual_rate": 0.01967,
+        "actual_se": 0.00177
+      },
+      {
+        "decile": 3,
+        "n": 6150,
+        "low": 0.02417,
+        "high": 0.03237,
+        "mean_predicted": 0.02821,
+        "actual_rate": 0.0278,
+        "actual_se": 0.0021
+      },
+      {
+        "decile": 4,
+        "n": 6150,
+        "low": 0.03237,
+        "high": 0.0416,
+        "mean_predicted": 0.03689,
+        "actual_rate": 0.03463,
+        "actual_se": 0.00233
+      },
+      {
+        "decile": 5,
+        "n": 6151,
+        "low": 0.04161,
+        "high": 0.05255,
+        "mean_predicted": 0.04689,
+        "actual_rate": 0.04357,
+        "actual_se": 0.0026
+      },
+      {
+        "decile": 6,
+        "n": 6150,
+        "low": 0.05255,
+        "high": 0.06657,
+        "mean_predicted": 0.05919,
+        "actual_rate": 0.06374,
+        "actual_se": 0.00312
+      },
+      {
+        "decile": 7,
+        "n": 6150,
+        "low": 0.06657,
+        "high": 0.08555,
+        "mean_predicted": 0.07545,
+        "actual_rate": 0.07561,
+        "actual_se": 0.00337
+      },
+      {
+        "decile": 8,
+        "n": 6150,
+        "low": 0.08555,
+        "high": 0.11543,
+        "mean_predicted": 0.09929,
+        "actual_rate": 0.10667,
+        "actual_se": 0.00394
+      },
+      {
+        "decile": 9,
+        "n": 6150,
+        "low": 0.11544,
+        "high": 0.17549,
+        "mean_predicted": 0.14109,
+        "actual_rate": 0.14309,
+        "actual_se": 0.00447
+      },
+      {
+        "decile": 10,
+        "n": 6151,
+        "low": 0.17549,
+        "high": 0.83352,
+        "mean_predicted": 0.28786,
+        "actual_rate": 0.28142,
+        "actual_se": 0.00573
+      }
+    ]
   }
 }

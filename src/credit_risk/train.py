@@ -29,7 +29,7 @@ from credit_risk.config import (
     VALIDATION_COHORT_FILE,
 )
 from credit_risk.data import load_splits
-from credit_risk.evaluate import basic_metrics, plot_evaluation
+from credit_risk.evaluate import basic_metrics, calibration_table, plot_evaluation
 from credit_risk.explain import LABELS, Explainer, global_importance, plot_importance
 from credit_risk.fairness import audit
 from credit_risk.decision import cost_based_threshold
@@ -120,7 +120,8 @@ def main() -> None:
 
     print("Training logistic regression and LightGBM...")
     models = {"logreg": train_logreg(splits.train), "lgbm": fit_lgbm(splits.train, splits.val)}
-    val_metrics = {name: basic_metrics(y_val, predict_default_proba(m, splits.val)) for name, m in models.items()}
+    val_predictions = {name: predict_default_proba(m, splits.val) for name, m in models.items()}
+    val_metrics = {name: basic_metrics(y_val, p) for name, p in val_predictions.items()}
     best = max(val_metrics, key=lambda name: val_metrics[name]["roc_auc"])
 
     # The model is chosen. Now, and only now, look at the test set.
@@ -136,6 +137,12 @@ def main() -> None:
         "lgbm_trees": int(models["lgbm"][-1].best_iteration_),
         "validation": {name: rounded(m) for name, m in val_metrics.items()},
         "test": {name: rounded(m) for name, m in test_metrics.items()},
+        # Predicted vs actual default rate per decile, for the selected model. Validation is what
+        # the simulator works on; test is the final check, scored once like everything else here.
+        "calibration_deciles": {
+            "validation": calibration_table(y_val, val_predictions[best]),
+            "test": calibration_table(y_test, test_predictions[best]),
+        },
     }
     REPORTS_DIR.mkdir(exist_ok=True)
     (REPORTS_DIR / "metrics.json").write_text(json.dumps(report, indent=2))
@@ -150,8 +157,6 @@ def main() -> None:
         ]
         figures += plot_importance(explainer, sample, REPORTS_DIR / "figures")
     save_artifacts(models[best], metadata, artifacts_dir())
-    # What the chosen model predicted for each applicant, with the real outcome.
-    save_cohort(cohort_frame(models[best], splits.test), artifacts_dir())
     # Policy and fairness analysis run on validation: users explore it interactively, and
     # nothing interactive may touch the test set, which is kept for the headline metrics.
     validation_cohort = cohort_frame(models[best], splits.val)

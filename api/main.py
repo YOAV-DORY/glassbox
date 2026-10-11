@@ -14,7 +14,9 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 
 from api.schemas import (
+    CalibrationBin,
     CurvePoint,
+    FairnessView,
     FeatureImportance,
     HealthResponse,
     ModelInfo,
@@ -30,7 +32,9 @@ from api.schemas import (
 from credit_risk.artifacts import artifacts_dir, load_artifacts, load_cohort
 from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS
 from credit_risk.decision import cost_based_threshold, decide, expected_profit, portfolio_outcome, profit_curve
+from credit_risk.evaluate import calibration_table
 from credit_risk.explain import Explainer
+from credit_risk.fairness import audit
 from credit_risk.whatif import risk_surface
 
 DEFAULT_POLICY = Policy(
@@ -49,7 +53,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # SHAP's TreeExplainer only works for tree models; a logistic regression gets no reasons.
     is_tree = app.state.metadata["model_type"] == "lgbm"
     app.state.explainer = Explainer(app.state.pipeline) if is_tree else None
-    app.state.portfolio = load_cohort(artifacts_dir())  # test-set predictions + outcomes
+    # Validation-set predictions + real outcomes. Interactive analysis never touches the test set.
+    app.state.portfolio = load_cohort(artifacts_dir())
+    if app.state.portfolio is not None:  # calibration doesn't depend on the policy: compute once
+        cohort = app.state.portfolio
+        app.state.calibration = calibration_table(cohort["defaulted"], cohort["p_default"])
     # The surface never changes for a given model, so compute it once and reuse it.
     x, y, z = risk_surface(app.state.pipeline, app.state.metadata["reference_applicant"], *SURFACE_FEATURES)
     app.state.surface = RiskSurface(
@@ -112,7 +120,7 @@ def predict(request: PredictRequest) -> PredictResponse:
 
 @app.post("/portfolio/simulate", response_model=PortfolioResponse)
 def simulate_portfolio(policy: PolicyRequest) -> PortfolioResponse:
-    """Replay a lending policy on the test applicants, whose real outcomes we know."""
+    """Replay a lending policy on the validation applicants, whose real outcomes we know."""
     data = app.state.portfolio
     if data is None:
         raise HTTPException(503, "No test-set predictions yet. Run: python -m credit_risk.train")
@@ -122,8 +130,9 @@ def simulate_portfolio(policy: PolicyRequest) -> PortfolioResponse:
         return PortfolioOutcome(**portfolio_outcome(p, y, amount, threshold, policy.lgd, policy.margin))
 
     curve = profit_curve(p, y, amount, policy.lgd, policy.margin, CURVE_THRESHOLDS)
-    best = max(curve, key=lambda point: point["profit"])
+    best = max(curve, key=lambda point: point["realized_profit"])
     return PortfolioResponse(
+        cohort="validation",
         applicants=len(p),
         formula_threshold=cost_based_threshold(policy.lgd, policy.margin),
         best_threshold=best["threshold"],
@@ -131,4 +140,6 @@ def simulate_portfolio(policy: PolicyRequest) -> PortfolioResponse:
         approve_all=outcome(1.0 + 1e-9),  # every probability is below this, so everyone is approved
         cutoff_50=outcome(0.5),
         curve=[CurvePoint(**{k: point[k] for k in CurvePoint.model_fields}) for point in curve],
+        calibration=[CalibrationBin(**row) for row in app.state.calibration],
+        fairness=FairnessView(**{k: v for k, v in audit(data, policy.threshold()).items() if k != "threshold"}),
     )

@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from credit_risk.config import MODEL_INPUTS
-from credit_risk.evaluate import expected_calibration_error, ks_statistic
+from credit_risk.evaluate import calibration_table, expected_calibration_error, ks_statistic
 from tests.conftest import VALID_APPLICANT
 
 
@@ -33,3 +33,15 @@ def test_calibration_error_is_small_for_honest_probabilities() -> None:
     y = (rng.random(p.size) < p).astype(int)  # outcomes drawn from the predicted probabilities
     assert expected_calibration_error(y, p) < 0.005
     assert expected_calibration_error(y, np.clip(p * 2, 0, 1)) > 0.1  # doubled predictions are off
+
+
+def test_calibration_table_has_ten_ordered_deciles_that_match_honest_probabilities() -> None:
+    rng = np.random.default_rng(1)
+    p = rng.uniform(0.01, 0.4, 100_000)
+    y = (rng.random(p.size) < p).astype(int)
+    table = calibration_table(y, p)
+    assert [row["decile"] for row in table] == list(range(1, 11))
+    assert sum(row["n"] for row in table) == p.size
+    assert all(a["high"] <= b["low"] for a, b in zip(table, table[1:]))  # deciles don't overlap
+    for row in table:  # honest probabilities: each decile's actual rate within ~4 standard errors
+        assert abs(row["actual_rate"] - row["mean_predicted"]) < 4 * row["actual_se"]

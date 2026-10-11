@@ -18,9 +18,8 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 
 MODEL_FILE = "model.joblib"
 METADATA_FILE = "metadata.json"
-# Row-level predictions with real outcomes, for the portfolio simulator and fairness audit.
+# Validation-set predictions with real outcomes, for the portfolio simulator and fairness audit.
 # Derived from Kaggle data, so they stay in artifacts/ (gitignored), never in the repo.
-PORTFOLIO_FILE = "test_predictions.parquet"
 VALIDATION_COHORT_FILE = "validation_predictions.parquet"
 
 # Default lending policy (placeholder assumptions, adjustable in the app from M4).

@@ -139,29 +139,62 @@ class RiskSurface(BaseModel):
 
 
 class PortfolioOutcome(BaseModel):
-    """What a cut-off would have done to the test applicants, using their real outcomes."""
+    """What a cut-off would have done to the validation applicants, using their real outcomes."""
 
     threshold: float
     approval_rate: float
     bad_rate: float  # share of approved loans that defaulted
     approved: int
-    expected_loss: float  # the model's forecast for the approved loans
-    realized_loss: float  # what actually happened
-    profit: float
+    expected_loss: float  # from the model's probabilities alone
+    realized_loss: float  # from what actually happened
+    expected_profit: float
+    realized_profit: float
 
 
 class CurvePoint(BaseModel):
     threshold: float
     approval_rate: float
     bad_rate: float
-    profit: float
+    expected_profit: float
+    realized_profit: float
+
+
+class CalibrationBin(BaseModel):
+    decile: int  # 1 = the 10% of applicants with the lowest predicted risk
+    n: int
+    low: float  # smallest and largest prediction in the decile
+    high: float
+    mean_predicted: float
+    actual_rate: float
+    actual_se: float  # standard error of actual_rate
+
+
+class FairnessGroup(BaseModel):
+    group: str
+    n: int
+    default_rate: float
+    default_rate_se: float
+    mean_predicted: float
+    approval_rate: float
+    default_rate_approved: float | None  # None when nobody in the group is approved
+    repayers_declined: float
+    approval_ratio: float  # approval rate / highest group's approval rate; < 0.8 is a warning sign
+
+
+class FairnessView(BaseModel):
+    gender: list[FairnessGroup]
+    age_band: list[FairnessGroup]
+    proxy: dict[str, float]  # how strongly the "not employed" flag stands in for age
 
 
 class PortfolioResponse(BaseModel):
-    applicants: int  # test-set applicants the model never saw during training
+    cohort: Literal["validation"]  # the test set is never used for interactive analysis
+    applicants: int
     formula_threshold: float  # margin / (margin + lgd)
-    best_threshold: float  # the most profitable cut-off in hindsight; close to the formula if calibrated
+    best_threshold: float  # most profitable cut-off on this cohort; near the formula if calibrated
     policy: PortfolioOutcome  # the chosen cut-off (formula, or the manual override)
     approve_all: PortfolioOutcome
     cutoff_50: PortfolioOutcome  # the naive 50% cut-off
     curve: list[CurvePoint]
+    calibration: list[CalibrationBin]
+    fairness: FairnessView  # at the chosen cut-off

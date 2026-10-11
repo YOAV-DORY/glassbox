@@ -10,23 +10,27 @@ const PAD = { left: 64, right: 24, top: 24, bottom: 40 };
 const X_MAX = 0.6;
 
 /**
- * Profit on the test applicants for every cut-off from 1% to 60%. Hand-drawn SVG:
+ * Profit on the validation applicants for every cut-off from 1% to 60%: realized (what
+ * happened, solid) and expected (from the model's probabilities, dashed). Hand-drawn SVG:
  * a chart this simple doesn't need a charting library.
  */
 export function ProfitCurve(props: { data: PortfolioResponse; onPick: (threshold: number) => void }) {
   const { data } = props;
   const [hover, setHover] = useState<number | null>(null); // index into data.curve
 
-  const profits = data.curve.map((p) => p.profit);
-  const low = Math.min(...profits, data.approve_all.profit, 0);
-  const high = Math.max(...profits, data.approve_all.profit);
+  const profits = data.curve.flatMap((p) => [p.realized_profit, p.expected_profit]);
+  const low = Math.min(...profits, data.approve_all.realized_profit, 0);
+  const high = Math.max(...profits, data.approve_all.realized_profit);
   const step = niceStep((high - low) / 5);
   const yMin = Math.floor(low / step) * step;
   const yMax = Math.ceil((high * 1.05) / step) * step;
   const x = (threshold: number) => PAD.left + (threshold / X_MAX) * (W - PAD.left - PAD.right);
   const y = (profit: number) => PAD.top + ((yMax - profit) / (yMax - yMin)) * (H - PAD.top - PAD.bottom);
 
-  const line = data.curve.map((p, i) => `${i ? "L" : "M"}${x(p.threshold).toFixed(1)},${y(p.profit).toFixed(1)}`).join(" ");
+  const path = (value: (p: (typeof data.curve)[number]) => number) =>
+    data.curve.map((p, i) => `${i ? "L" : "M"}${x(p.threshold).toFixed(1)},${y(value(p)).toFixed(1)}`).join(" ");
+  const line = path((p) => p.realized_profit);
+  const expectedLine = path((p) => p.expected_profit);
   const area = `${line} L${x(data.curve.at(-1)!.threshold)},${y(yMin)} L${x(data.curve[0].threshold)},${y(yMin)} Z`;
   const yTicks = Array.from({ length: Math.round((yMax - yMin) / step) + 1 }, (_, i) => yMin + i * step);
   const policyX = x(Math.min(data.policy.threshold, X_MAX));
@@ -66,33 +70,35 @@ export function ProfitCurve(props: { data: PortfolioResponse; onPick: (threshold
       ))}
 
       {/* Reference: profit if everyone were approved */}
-      <line className="ref-line" x1={PAD.left} x2={W - PAD.right} y1={y(data.approve_all.profit)} y2={y(data.approve_all.profit)} />
+      <line className="ref-line" x1={PAD.left} x2={W - PAD.right} y1={y(data.approve_all.realized_profit)} y2={y(data.approve_all.realized_profit)} />
       {/* Below the line, at the right end: there the curve runs just above it, so the label stays clear */}
-      <text className="ref-label" x={W - PAD.right} y={y(data.approve_all.profit) + 16} textAnchor="end">
-        approve everyone {formatMoney(data.approve_all.profit)}
+      <text className="ref-label" x={W - PAD.right} y={y(data.approve_all.realized_profit) + 16} textAnchor="end">
+        approve everyone {formatMoney(data.approve_all.realized_profit)}
       </text>
 
       <path className="curve-area" d={area} />
+      <path className="curve-expected" d={expectedLine} />
       <path className="curve-line" d={line} />
 
       {/* Formula cut-off vs. the best cut-off in hindsight: close together means the probabilities are honest */}
       <line className="best-line" x1={x(data.best_threshold)} x2={x(data.best_threshold)} y1={PAD.top} y2={H - PAD.bottom} />
       <text className="best-label" x={x(data.best_threshold) + 6} y={PAD.top + 10}>
-        best in hindsight {formatPercent(data.best_threshold, 0)}
+        most profitable here {formatPercent(data.best_threshold, 0)}
       </text>
 
       <g className="policy-marker" style={{ transform: `translateX(${policyX}px)` }}>
         <line x1={0} x2={0} y1={PAD.top} y2={H - PAD.bottom} />
-        <circle cx={0} cy={y(data.policy.profit)} r={6} />
+        <circle cx={0} cy={y(data.policy.realized_profit)} r={6} />
       </g>
 
       {hovered && (
         <g className="hover">
           <line x1={x(hovered.threshold)} x2={x(hovered.threshold)} y1={PAD.top} y2={H - PAD.bottom} />
-          <circle cx={x(hovered.threshold)} cy={y(hovered.profit)} r={4} />
-          <text x={x(hovered.threshold) + (hovered.threshold > 0.42 ? -10 : 10)} y={y(hovered.profit) - 12}
+          <circle cx={x(hovered.threshold)} cy={y(hovered.realized_profit)} r={4} />
+          <text x={x(hovered.threshold) + (hovered.threshold > 0.42 ? -10 : 10)} y={y(hovered.realized_profit) - 12}
             textAnchor={hovered.threshold > 0.42 ? "end" : "start"}>
-            {formatPercent(hovered.threshold, 0)}: {formatMoney(hovered.profit, true)} · approve {formatPercent(hovered.approval_rate, 0)}
+            {formatPercent(hovered.threshold, 0)}: {formatMoney(hovered.realized_profit, true)} (expected{" "}
+            {formatMoney(hovered.expected_profit, true)}) · approve {formatPercent(hovered.approval_rate, 0)}
           </text>
         </g>
       )}

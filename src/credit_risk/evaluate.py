@@ -40,6 +40,25 @@ def expected_calibration_error(y_true: np.ndarray, p_default: np.ndarray, n_bins
     return float(np.average((per_bin["actual"] - per_bin["predicted"]).abs(), weights=per_bin["n"]))
 
 
+def calibration_table(y_true: np.ndarray, p_default: np.ndarray, n_bins: int = 10) -> list[dict[str, float]]:
+    """Applicants sorted by prediction and cut into 10 equal-sized groups (deciles).
+
+    For each: the range and average of predictions, the actual default rate, and that rate's
+    standard error. A single average error can hide a miss near the cut-off; this table can't.
+    """
+    df = pd.DataFrame({"y": np.asarray(y_true), "p": np.asarray(p_default)})
+    df["decile"] = pd.qcut(df["p"], n_bins, labels=False, duplicates="drop") + 1
+    table = df.groupby("decile").agg(
+        n=("y", "size"), low=("p", "min"), high=("p", "max"), mean_predicted=("p", "mean"), actual_rate=("y", "mean")
+    )
+    table["actual_se"] = np.sqrt(table["actual_rate"] * (1 - table["actual_rate"]) / table["n"])
+    return [
+        {"decile": int(decile), "n": int(row["n"]), **{k: round(float(row[k]), 5) for k in
+                                                     ("low", "high", "mean_predicted", "actual_rate", "actual_se")}}
+        for decile, row in table.iterrows()
+    ]
+
+
 def basic_metrics(y_true: np.ndarray, p_default: np.ndarray) -> dict[str, float]:
     y_true, p_default = np.asarray(y_true), np.asarray(p_default)
     auc = roc_auc_score(y_true, p_default)

@@ -99,30 +99,57 @@ export interface RiskSurface {
   threshold: number;
 }
 
-/** What a cut-off would have done to the test applicants, using their real outcomes. */
+/** What a cut-off would have done to the validation applicants, using their real outcomes. */
 export interface PortfolioOutcome {
   threshold: number;
   approval_rate: number;
   bad_rate: number; // share of approved loans that defaulted
   approved: number;
-  expected_loss: number; // the model's forecast
-  realized_loss: number; // what actually happened
-  profit: number;
+  expected_loss: number; // from the model's probabilities alone
+  realized_loss: number; // from what actually happened
+  expected_profit: number;
+  realized_profit: number;
 }
 
 export interface CurvePoint {
   threshold: number;
   approval_rate: number;
   bad_rate: number;
-  profit: number;
+  expected_profit: number;
+  realized_profit: number;
+}
+
+export interface CalibrationBin {
+  decile: number; // 1 = lowest predicted risk
+  n: number;
+  low: number;
+  high: number;
+  mean_predicted: number;
+  actual_rate: number;
+  actual_se: number; // standard error of actual_rate
+}
+
+export interface FairnessGroup {
+  group: string;
+  n: number;
+  default_rate: number;
+  default_rate_se: number;
+  mean_predicted: number;
+  approval_rate: number;
+  default_rate_approved: number | null;
+  repayers_declined: number;
+  approval_ratio: number; // < 0.8: below the four-fifths rule of thumb
 }
 
 export interface PortfolioResponse {
+  cohort: "validation";
   applicants: number;
   formula_threshold: number;
-  best_threshold: number; // most profitable cut-off in hindsight
+  best_threshold: number; // most profitable cut-off on this cohort
   policy: PortfolioOutcome;
   approve_all: PortfolioOutcome;
   cutoff_50: PortfolioOutcome;
   curve: CurvePoint[];
+  calibration: CalibrationBin[];
+  fairness: { gender: FairnessGroup[]; age_band: FairnessGroup[]; proxy: Record<string, number> };
 }

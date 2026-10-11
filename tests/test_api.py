@@ -100,6 +100,10 @@ def test_portfolio_simulation_contract(client: TestClient) -> None:
     assert len(body["curve"]) == 60
     rates = [point["approval_rate"] for point in body["curve"]]
     assert rates == sorted(rates)  # a higher cut-off never approves fewer people
+    assert body["cohort"] == "validation"
+    assert [row["decile"] for row in body["calibration"]] == list(range(1, 11))
+    assert {row["group"] for row in body["fairness"]["gender"]} <= {"F", "M"}
+    assert all(0 <= row["approval_ratio"] <= 1 for row in body["fairness"]["age_band"])
 
 
 @pytest.mark.parametrize("policy", [{"lgd": 0}, {"margin": 1.5}, {"threshold_override": 1}, {"risk": 1}])

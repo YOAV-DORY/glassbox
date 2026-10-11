@@ -45,9 +45,18 @@ def portfolio_outcome(
     lgd: float,
     margin: float,
 ) -> dict[str, float]:
-    """What a cut-off would have done to a set of past loans whose outcomes we know."""
+    """What a cut-off would have done to a set of past loans whose outcomes we know.
+
+    "Expected" figures use only the model's probabilities (what you'd forecast before lending);
+    "realized" figures use what actually happened. Close agreement = calibrated in money terms.
+
+    Selection bias: these are loans the lender already approved. Declining one of them here is a
+    what-if on an approved loan, so decline-side results are assumptions, not measurements of
+    how genuinely rejected applicants would have behaved.
+    """
     approved = p_default < threshold
     n_approved = int(approved.sum())
+    p, a = p_default[approved], amount[approved]
     repaid = approved & (defaulted == 0)
     bad = approved & (defaulted == 1)
     realized_loss = float((amount[bad] * lgd).sum())
@@ -56,9 +65,10 @@ def portfolio_outcome(
         "approval_rate": n_approved / len(p_default),
         "bad_rate": float(defaulted[approved].mean()) if n_approved else 0.0,  # defaults among approved
         "approved": n_approved,
-        "expected_loss": float((p_default[approved] * lgd * amount[approved]).sum()),  # the model's forecast
-        "realized_loss": realized_loss,  # what actually happened
-        "profit": float((amount[repaid] * margin).sum()) - realized_loss,
+        "expected_loss": float((p * lgd * a).sum()),
+        "realized_loss": realized_loss,
+        "expected_profit": float(((1 - p) * margin * a - p * lgd * a).sum()),
+        "realized_profit": float((amount[repaid] * margin).sum()) - realized_loss,
     }
 
 
