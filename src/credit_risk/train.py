@@ -19,10 +19,12 @@ import pandas as pd
 from sklearn.pipeline import Pipeline
 
 from credit_risk.artifacts import artifacts_dir, save_artifacts
-from credit_risk.config import MODEL_INPUTS, PROJECT_ROOT, REPORTS_DIR, TARGET
+from credit_risk.config import DEFAULT_LGD, DEFAULT_MARGIN, MODEL_INPUTS, PROJECT_ROOT, REPORTS_DIR, TARGET
 from credit_risk.data import load_splits
 from credit_risk.evaluate import basic_metrics, plot_evaluation
+from credit_risk.decision import cost_based_threshold
 from credit_risk.models import build_logreg_pipeline, fit_lgbm
+from credit_risk.whatif import plot_risk_map
 
 MODEL_NAMES = {"logreg": "Logistic regression", "lgbm": "LightGBM"}
 
@@ -117,6 +119,10 @@ def main() -> None:
 
     metadata = build_metadata(best, splits.train, val_metrics[best], test_metrics[best])
     save_artifacts(models[best], metadata, artifacts_dir())
+    figures.append(plot_risk_map(
+        models[best], metadata["reference_applicant"], cost_based_threshold(DEFAULT_LGD, DEFAULT_MARGIN),
+        REPORTS_DIR / "figures" / "risk_map.png",
+    ))
 
     table = pd.DataFrame({f"{MODEL_NAMES[n]} ({split})": m for split, ms in
                           (("val", val_metrics), ("test", test_metrics)) for n, m in ms.items()})
