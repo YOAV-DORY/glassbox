@@ -1,5 +1,9 @@
 # Glassbox
 
+[![CI](https://github.com/YOAV-DORY/glassbox/actions/workflows/ci.yml/badge.svg)](https://github.com/YOAV-DORY/glassbox/actions/workflows/ci.yml)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 **A credit-risk model you can see inside.** Glassbox predicts the probability that a loan applicant
 defaults, turns it into an approve-or-decline decision with an explicit lending policy, and shows its
 working: in a live decision app, and in a 3D view of the model's actual risk surface.
@@ -115,7 +119,22 @@ More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_i
 - **Fairness audit is descriptive.** It measures gaps at one cut-off on past approved loans; it does not
   fix them, and it is not a legal disparate-impact analysis.
 
-## Run it locally
+## Try it in one command (no Kaggle download)
+
+A demo model trained on **synthetic** applicants (generated in code, same format as the real data),
+served with the full web app on http://localhost:8000. Its numbers are illustrative; the app says so.
+
+```bash
+./scripts/demo.sh          # needs Python 3.11+ and Node 20+ (macOS: brew install libomp)
+```
+
+or, with Docker only:
+
+```bash
+docker build -t glassbox . && docker run --rm -p 8000:8000 glassbox
+```
+
+## Run it locally with the real data
 
 Needs Python 3.12+, Node 20+, and on macOS `brew install libomp` (for LightGBM).
 
