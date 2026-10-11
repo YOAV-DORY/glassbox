@@ -17,8 +17,8 @@ of the job:
 
 1. **Mistakes don't cost the same.** Approving a loan that defaults can lose most of it; turning away
    someone who would have repaid loses only the margin. A 50% cut-off ignores that.
-2. **Decisions must be explainable.** In the US, a lender that declines someone must give the principal
-   reasons (ECOA / Regulation B adverse action notices).
+2. **Decisions must be explainable.** Lenders are expected to explain declines (in the US, through
+   adverse action notices under ECOA / Regulation B).
 3. **Decisions must be fair, and that has to be measured.** Leaving gender and age out of the model is
    not enough when other inputs can stand in for them.
 
@@ -33,7 +33,8 @@ Glassbox is built around those three points, on the public
 - **Model:** LightGBM on 15 application fields plus 5 engineered ratios (payment-to-income,
   loan-to-value, ...). A higher credit score can never raise predicted risk (monotone constraints).
 - **Reason codes:** every prediction comes with the factors that raised and lowered the risk,
-  measured with SHAP. On a decline they are the principal reasons an adverse action notice would list.
+  measured with SHAP. These are reason-code-style explanations, not a compliant adverse-action notice:
+  a real notice needs reviewed reason wording, a stable mapping from features to reasons, and legal review.
 - **Policy:** approve when expected profit is positive: `p < margin / (margin + loss given default)`.
   With placeholder economics (60% loss on default, 10% margin) the cut-off is **14.3%**.
 - **Portfolio simulator:** set the loss and the margin (or a manual cut-off) and replay the policy on
@@ -193,7 +194,8 @@ More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_i
 - **Approve-everyone looks profitable** because the test loans were already approved by Home Credit;
   the people it rejected are missing, so every baseline here is flattered.
 - **Opaque inputs.** The three external scores are the strongest features, and their provenance is unknown.
-- **Reason codes explain the model, not the world.** SHAP is not causal, and correlated inputs (the
+- **Reason codes explain the model, not the world.** They are not an adverse-action notice. SHAP is
+  not causal, and correlated inputs (the
   three scores; loan amount and purchase price) can share credit in ways that look arbitrary.
 - **Fairness audit is descriptive.** It measures gaps at one cut-off on past approved loans; it does not
   fix them, and it is not a legal disparate-impact analysis.

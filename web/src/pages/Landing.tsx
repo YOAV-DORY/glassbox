@@ -146,7 +146,7 @@ const STEPS = [
   },
   {
     title: "Show the reasons",
-    body: "Every decision lists the factors that pushed the risk up or down, measured with SHAP. On a decline, they are the principal reasons a lender must give the applicant.",
+    body: "Every decision lists the factors that pushed the risk up or down, measured with SHAP: reason-code-style explanations of what the model did, not a compliant adverse-action notice.",
     note: "Contributions add up exactly to the score: nothing is hidden.",
   },
   {

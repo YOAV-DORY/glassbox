@@ -9,11 +9,12 @@ export function Reasons(props: { up: Reason[]; down: Reason[]; decision: "approv
   const largest = Math.max(...[...up, ...down].map((r) => Math.abs(r.impact)));
   return (
     <section className="reasons">
-      <h3 className="reasons-title">{decision === "decline" ? "Principal reasons for decline" : "Why this score"}</h3>
+      <h3 className="reasons-title">{decision === "decline" ? "Main factors behind this decline" : "Why this score"}</h3>
       <ReasonGroup title="Raising risk" reasons={up} largest={largest} direction="up" />
       <ReasonGroup title="Lowering risk" reasons={down} largest={largest} direction="down" />
       <p className="reasons-note">
         Bar length is each factor's SHAP contribution. Together, all contributions add up exactly to this score.
+        A reason-code-style explanation, not a compliant adverse-action notice.
       </p>
     </section>
   );

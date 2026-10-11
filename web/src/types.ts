@@ -72,7 +72,7 @@ export interface PredictResponse {
   threshold: number;
   model_version: string;
   expected_profit: number; // of approving this loan, under the policy
-  reasons_up: Reason[]; // strongest first; on a decline these are the principal reasons
+  reasons_up: Reason[]; // strongest first; reason-code style, not an adverse-action notice
   reasons_down: Reason[];
 }
 

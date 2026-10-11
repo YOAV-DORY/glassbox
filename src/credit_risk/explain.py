@@ -5,9 +5,10 @@ values are exact (TreeExplainer), and they add up:
 
     base value + sum of all contributions = the model's raw score (log-odds)
 
-A positive contribution pushes the risk up, a negative one pulls it down. These are
-the "reason codes": in the US a lender who declines someone must tell them the
-principal reasons (ECOA / Regulation B adverse action notices).
+A positive contribution pushes the risk up, a negative one pulls it down. Listed in plain
+language, they give reason-code-style explanations. They are not a compliant adverse-action
+notice (ECOA / Regulation B): that would need reviewed reason wording, a stable mapping from
+features to reasons, and legal review.
 
 Caveats worth knowing: SHAP explains the *model*, not the real world (it is not
 causal), and correlated features (the three credit scores, loan amount and goods

@@ -91,7 +91,7 @@ class PredictResponse(BaseModel):
     threshold: float
     model_version: str
     expected_profit: float  # of approving this loan, under the policy, before knowing the outcome
-    # Strongest factors first. On a decline, reasons_up are the principal reasons.
+    # Strongest factors first. Reason-code-style explanations, not a compliant adverse-action notice.
     reasons_up: list[Reason]
     reasons_down: list[Reason]
 
