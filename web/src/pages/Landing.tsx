@@ -19,6 +19,10 @@ export function Landing({ info }: { info: ModelInfo | null }) {
   const [surface, setSurface] = useState<RiskSurface | null>(null);
   useEffect(() => {
     fetchRiskSurface().then(setSurface).catch(() => setSurface(null));
+    // Deep links like /#landscape: the section only exists after React renders, so the
+    // browser's own jump-to-anchor misses it. Do it ourselves.
+    const target = window.location.hash && document.getElementById(window.location.hash.slice(1));
+    if (target) target.scrollIntoView({ block: "start" });
   }, []);
 
   return (

@@ -19,18 +19,13 @@ export function RiskLandscape({ surface }: { surface: RiskSurface | null }) {
   const onScreen = useOnScreen(canvasRef);
   const angle = useRef({ yaw: -0.75, pitch: 0.58 });
   const drag = useRef<{ x: number; y: number } | null>(null);
+  const redraw = useRef<() => void>(() => {});
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !surface || !onScreen) return;
-    const still = prefersReducedMotion();
-    let frame = 0;
-    let last = performance.now();
 
-    const draw = (now: number) => {
-      const dt = (now - last) / 1000;
-      last = now;
-      if (!drag.current && !still) angle.current.yaw += dt * 0.12; // idle rotation
+    const render = () => {
       const { ctx, width, height } = fitCanvas(canvas);
       const view: View = {
         ...angle.current,
@@ -40,9 +35,26 @@ export function RiskLandscape({ surface }: { surface: RiskSurface | null }) {
         distance: 8, // gentle perspective: this is a chart, it should stay readable
       };
       drawLandscape(ctx, surface, view);
-      frame = requestAnimationFrame(draw); // keep drawing so dragging works even without idle motion
     };
-    frame = requestAnimationFrame(draw);
+
+    // Reduced motion: no idle spin, so draw once and then only while being dragged.
+    if (prefersReducedMotion()) {
+      render();
+      redraw.current = render;
+      return () => {
+        redraw.current = () => {};
+      };
+    }
+
+    let frame = 0;
+    let last = performance.now();
+    const loop = (now: number) => {
+      if (!drag.current) angle.current.yaw += ((now - last) / 1000) * 0.12; // idle rotation
+      last = now;
+      render();
+      frame = requestAnimationFrame(loop);
+    };
+    frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
   }, [surface, onScreen]);
 
@@ -55,6 +67,7 @@ export function RiskLandscape({ surface }: { surface: RiskSurface | null }) {
     angle.current.yaw += (event.clientX - drag.current.x) * 0.008;
     angle.current.pitch = Math.min(Math.max(angle.current.pitch + (event.clientY - drag.current.y) * 0.006, 0.1), 1.2);
     drag.current = { x: event.clientX, y: event.clientY };
+    redraw.current(); // only does something in reduced-motion mode; otherwise the loop redraws
   };
   const onPointerUp = () => (drag.current = null);
 
