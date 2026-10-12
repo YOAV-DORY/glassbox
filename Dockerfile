@@ -15,6 +15,9 @@ RUN npm run build
 FROM python:3.12-slim
 # LightGBM needs the OpenMP runtime.
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
+# One thread per library. Hosting containers often report the whole machine's CPUs while
+# granting a fraction of one; libraries that start a thread per reported CPU then crawl.
+ENV OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 LOKY_MAX_CPU_COUNT=1
 WORKDIR /app
 COPY pyproject.toml constraints.txt README.md ./
 COPY src/ src/
