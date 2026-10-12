@@ -9,6 +9,10 @@ probability that a loan applicant defaults, turns it into an approve-or-decline 
 explicit lending policy, explains each decision, and audits the outcome across groups. It is a learning
 project on public data, not a lending product, and the sections below say where its evidence stops.
 
+**Live demo: https://glassbox-uayo.onrender.com** (synthetic-data model, so its numbers are
+illustrative; the real results are below. On the free plan the server sleeps when idle, so the
+first visit can take up to a minute to wake it.)
+
 ![Glassbox landing page](docs/images/landing.jpg)
 
 **Demo (68 s):** the decision desk reacting to a falling credit score, then the policy simulator.
@@ -144,6 +148,8 @@ More: [ROC](reports/figures/roc.png), [global importance](reports/figures/shap_i
   stability, before anything like an adverse-action notice is generated.
 
 ## Try it in one command (no Kaggle download)
+
+Or skip installing and use the [live demo](https://glassbox-uayo.onrender.com), which runs the same thing.
 
 A demo model trained on **synthetic** applicants (generated in code, same format as the real data),
 served with the full web app on http://localhost:8000. Its numbers are illustrative; the app says so.
