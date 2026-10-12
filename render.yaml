@@ -1,0 +1,9 @@
+# Render blueprint: Dashboard -> New -> Blueprint -> pick this repo -> Apply.
+# Builds the Dockerfile (synthetic-data demo) on Render's free plan.
+services:
+  - type: web
+    name: glassbox
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true

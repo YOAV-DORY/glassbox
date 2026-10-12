@@ -28,4 +28,5 @@ RUN useradd --create-home glassbox
 USER glassbox
 ENV GLASSBOX_ARTIFACTS_DIR=/app/artifacts/demo
 EXPOSE 8000
-CMD ["uvicorn", "api.serve:app", "--host", "0.0.0.0", "--port", "8000"]
+# Hosts like Render choose the port through $PORT; 8000 otherwise.
+CMD ["sh", "-c", "uvicorn api.serve:app --host 0.0.0.0 --port ${PORT:-8000}"]
